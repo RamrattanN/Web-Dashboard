@@ -5,10 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dashboard</title>
   <!--
-  Personal Dashboard v1.2.1
+  WebDashboard v1.4.7
   Author: Nilesh Ramrattan
   Solution concept and implementation assisted by ChatGPT (OpenAI)
-  Baseline: v1.0.0 (2025-10-13)
   -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,8 +44,8 @@
     .fab-settings{ position: fixed; top: 16px; right: 16px; z-index: 30; appearance: none; border: none; padding: 10px 14px; border-radius: 12px; background: var(--card-bg); color: var(--card-fg); box-shadow: var(--shadow); font-weight: 600; cursor: pointer; }
 
     .wrap{ min-height: 100%; display: grid; grid-template-rows: auto auto 1fr; gap: 18px; }
-    header{ padding: 84px 24px 0; display: grid; gap: 14px; justify-items: center; position: relative; }
-    .logo{ font-weight: 600; letter-spacing: .5px; color: white; text-shadow: 0 2px 10px rgba(0,0,0,.35); font-size: clamp(34px, 5.6vw, 64px); max-width: min(90vw, 1200px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; outline: none; cursor: text; }
+    header{ padding: 140px 24px 0; display: grid; gap: 20px; justify-items: center; position: relative; }
+    .logo{ font-weight: 600; letter-spacing: .5px; color: white; text-shadow: 0 2px 10px rgba(0,0,0,.35); font-size: clamp(34px, 5.6vw, 64px); max-width: min(90vw, 1200px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; outline: none; cursor: text; margin-bottom: 18px; }
 
     .search-bar, .search-row-2{ width: min(1200px, 92vw); display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .search{ display: grid; grid-template-columns: auto 1fr auto auto auto; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 14px; background: var(--card-bg); box-shadow: var(--shadow); }
@@ -66,7 +65,7 @@
     .card{ width: var(--tile-width); background: var(--card-bg); border-radius: var(--tile-radius); box-shadow: var(--shadow);
       padding: var(--tile-pad); display: grid; grid-template-columns: 44px 1fr auto; grid-template-rows: auto auto; gap: 8px 12px; align-items: center;
       position: relative; transition: transform 120ms ease, box-shadow 120ms ease;
-      touch-action: none; /* enable pointer events for touch */
+      touch-action: none;
       user-select: none;
       cursor: grab;
     }
@@ -79,6 +78,7 @@
       background: linear-gradient(135deg, rgba(255,255,255,0.65), rgba(236,243,255,0.8));
       box-shadow: inset 0 0 0 3px rgba(99,102,241,0.45);
       animation: pulse 1.2s ease-in-out infinite;
+      width: var(--tile-width);
     }
     @keyframes pulse{ 0%{ filter: brightness(1); } 50%{ filter: brightness(1.07); } 100%{ filter: brightness(1); } }
 
@@ -99,6 +99,9 @@
 
     dialog{ border: none; border-radius: 18px; width: min(650px, 92vw); padding: 0; overflow: hidden; box-shadow: var(--shadow); }
     .sheet{ background: white; padding: 18px; display: grid; gap: 12px; }
+        .actions-row{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+        .actions-right{display:flex;gap:10px}
+        .version-left{font-weight:700;color:#0f172a;background:rgba(37,99,235,.08);padding:8px 12px;border-radius:10px}
     .sheet h3{ margin: 0; }
     .field{ display: grid; gap: 6px; }
     .field input, .field textarea, .field select{ width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; font-size: 14px; }
@@ -312,6 +315,8 @@
     const LS_KEY = 'startpage.links.v1';
     const ST_KEY = 'startpage.settings.v1';
     const IC_KEY = 'startpage.iconcache.v1';
+        const APP_NAME='WebDashboard';
+        const VERSION='v1.4.7';
     const grid = document.getElementById('grid');
     const groupBar = document.getElementById('groupBar');
     const logo = document.getElementById('logo');
@@ -401,6 +406,7 @@
       const st = getSettings();
       if (st.lockLayout === 'yes') el.classList.add('locked');
       el.dataset.gindex = globalIndex;
+      el.dataset.url = item.url;
 
       const fav = document.createElement('div'); fav.className = 'favicon';
       const img = document.createElement('img'); img.referrerPolicy = 'no-referrer';
@@ -428,12 +434,7 @@
       mRefresh.onclick = () => { const cache=getIconCache(); delete cache[domainFromUrl(item.url)]; setIconCache(cache); fav.innerHTML=''; const im=document.createElement('img'); im.referrerPolicy='no-referrer'; fav.appendChild(im); resolveIcon(item.url, im, useMonogram); };
       btn.onclick = (e) => { e.stopPropagation(); document.querySelectorAll('.menu.open').forEach(x => x.classList.remove('open')); menu.classList.toggle('open'); };
       document.addEventListener('click', () => menu.classList.remove('open'));
-
-      el.addEventListener('click', (e) => {
-        if (e.detail === 0) return; // ignore synthetic clicks during pointer ops
-        if (e.target.closest('.icon-btn') || e.target.closest('.menu')) return;
-        window.open(item.url, '_blank');
-      });
+      el.addEventListener('contextmenu', (e) => { e.preventDefault(); btn.click(); });
 
       el.append(fav, title, more);
       if (getSettings().showDesc === 'yes' && item.desc) el.appendChild(desc);
@@ -441,16 +442,55 @@
       return el;
     }
 
-    function reorderGlobal(from, to){
+    function reorderGlobal(from, to, anchor){
       const arr = getLinks();
       const [m] = arr.splice(from, 1);
       if (to > arr.length) to = arr.length;
-      if (to > from) to -= 1;
+      if (anchor === 'before' && to > from) to -= 1;
       arr.splice(to, 0, m);
       setLinks(arr);
       render();
     }
     function removeAt(globalIndex){ const arr = getLinks(); arr.splice(globalIndex,1); setLinks(arr); render(); }
+        // Rebuild array order from current DOM order of visible cards plus the dragged item.
+        function commitOrderFromDOM(dragGIndex, insertPos){
+          const st = getSettings();
+          const allCards = Array.from(grid.querySelectorAll('.card')); // visible cards, not including placeholder
+          const visibleG = allCards.map(c => Number(c.dataset.gindex));
+          const newVisible = visibleG.slice();
+          // insert dragged global index at the placeholder slot
+          newVisible.splice(insertPos, 0, dragGIndex);
+
+          // If All groups are shown, we can directly reorder the whole array by this sequence
+          const arr = getLinks();
+          if (!st.groupFilter || st.groupFilter === 'All'){
+            // Build map gindex -> object reference
+            const objects = arr.map(x => x);
+            const reordered = newVisible.map(g => objects[g]);
+            setLinks(reordered);
+            return;
+          }
+
+          // Otherwise, reorder only the items of the active group in place, preserving other items.
+          const active = st.groupFilter.toLowerCase();
+          const objects = arr.map(x => x);
+          // Determine which global indices are part of the active group
+          const activeIndices = arr.map((x, i) => ((x.group||'').toLowerCase() === active) ? i : -1).filter(i => i >= 0);
+          // Filter newVisible to active-only and convert to objects
+          const activeNewSequence = newVisible.filter(i => activeIndices.includes(i)).map(i => objects[i]);
+          // Now stitch back: walk original arr, and whenever we hit an active index, pull the next from activeNewSequence
+          let cursor = 0;
+          const result = arr.map((item, idx) => {
+            if (activeIndices.includes(idx)){
+              const nextObj = activeNewSequence[cursor++];
+              return nextObj;
+            } else {
+              return item;
+            }
+          });
+          setLinks(result);
+        }
+
 
     function openLinkDialog(mode, item={}, globalIndex=-1){
       const linkDialog = document.getElementById('linkDialog');
@@ -528,6 +568,8 @@
     const backupRemindInput = document.getElementById('backupRemind');
 
     settingsBtn.onclick = () => {
+          setTimeout(ensureVersionLabel, 0);
+          const vf=document.getElementById('versionFooter'); if(vf){vf.textContent=`${APP_NAME} ${VERSION}`;}
       const st = getSettings();
       wallpaperMode.value = st.mode||'static'; wallpaperValue.value = st.value||''; wallpaperColor.value = st.color||'#0b1120';
       maxTilesInput.value = st.maxTiles||60; showDescInput.value = st.showDesc||'yes'; defaultGroupInput.value = st.groupFilter||'All';
@@ -580,37 +622,28 @@
     logo.addEventListener('keydown', (e) => { if (e.key === 'Enter'){ e.preventDefault(); logo.blur(); } if (e.key === 'Escape'){ e.preventDefault(); const st=getSettings(); logo.textContent = st.title || 'Dashboard'; logo.blur(); } });
     logo.addEventListener('blur', () => { const st = getSettings(); st.title = logo.textContent.trim() || 'Dashboard'; setSettings(st); logo.textContent = st.title; });
 
-    // Pointer-based drag and drop (no HTML5 DnD)
+    // Pointer-based drag and drop with controlled tap-to-open
     function wirePointerDnD(){
       const st = getSettings();
       if (st.lockLayout === 'yes') return;
-
       const cards = Array.from(grid.querySelectorAll('.card'));
       cards.forEach(card => {
+        card.addEventListener('dragstart', ev => ev.preventDefault());
         card.onpointerdown = (e) => onPointerDownCard(e, card);
       });
     }
 
     let dragState = null;
+    let isDropping = false;
+    const TAP_THRESHOLD = 4; // px
+
     function onPointerDownCard(e, card){
       if (e.button !== 0) return;
       if (e.target.closest('.icon-btn') || e.target.closest('.menu')) return;
-
       e.preventDefault();
       card.setPointerCapture(e.pointerId);
-
       const rect = card.getBoundingClientRect();
-      dragState = {
-        card,
-        startX: e.clientX,
-        startY: e.clientY,
-        grabDX: e.clientX - rect.left,
-        grabDY: e.clientY - rect.top,
-        started: false,
-        ghost: null,
-        placeholder: null
-      };
-
+      dragState = { card, startX: e.clientX, startY: e.clientY, grabDX: e.clientX - rect.left, grabDY: e.clientY - rect.top, started: false, ghost: null, placeholder: null };
       card.onpointermove = onPointerMove;
       card.onpointerup = onPointerUp;
       card.onpointercancel = onPointerUp;
@@ -619,8 +652,6 @@
     function startDrag(e){
       const { card } = dragState;
       dragState.started = true;
-
-      // Placeholder where card was
       const ph = document.createElement('div');
       ph.className = 'card placeholder';
       ph.style.height = card.offsetHeight + 'px';
@@ -628,7 +659,6 @@
       card.parentNode.insertBefore(ph, card);
       dragState.placeholder = ph;
 
-      // Floating ghost
       const rect = card.getBoundingClientRect();
       const ghost = card.cloneNode(true);
       ghost.classList.add('drag-layer','dragging');
@@ -639,78 +669,96 @@
       document.body.appendChild(ghost);
       dragState.ghost = ghost;
 
-      // Hide original
       card.style.visibility = 'hidden';
     }
 
     function onPointerMove(e){
       if (!dragState) return;
-      const { card } = dragState;
       const moved = Math.abs(e.clientX - dragState.startX) + Math.abs(e.clientY - dragState.startY);
-      if (!dragState.started && moved > 6) startDrag(e);
+      if (!dragState.started && moved > TAP_THRESHOLD) startDrag(e);
       if (!dragState.started) return;
 
-      // Move ghost
       dragState.ghost.style.left = (e.clientX - dragState.grabDX) + 'px';
       dragState.ghost.style.top = (e.clientY - dragState.grabDY) + 'px';
 
-      // Decide placeholder spot
       const target = getTargetSlot(e.clientX, e.clientY);
       const ph = dragState.placeholder;
       if (target.type === 'before') grid.insertBefore(ph, target.node);
       else if (target.type === 'after') grid.insertBefore(ph, target.node.nextSibling);
-      else if (target.type === 'end') grid.appendChild(ph);
+      else grid.appendChild(ph);
     }
 
     function getTargetSlot(x, y){
       const cards = Array.from(grid.querySelectorAll('.card')).filter(c => c !== dragState.card && !c.classList.contains('placeholder'));
+      if (!cards.length) return { type: 'end', node: null };
+
+      const EPS = 8;
+      const rows = [];
       for (const c of cards){
         const r = c.getBoundingClientRect();
-        if (y < r.bottom){
-          const before = x < r.left + r.width / 2;
-          return { type: before ? 'before' : 'after', node: c };
-        }
+        let row = rows.find(R => Math.abs(R.top - r.top) < EPS);
+        if (!row){ row = { top: r.top, bottom: r.bottom, items: [] }; rows.push(row); }
+        row.items.push({ node: c, rect: r });
       }
-      return { type: 'end', node: null };
+      rows.sort((a,b)=>a.top-b.top);
+      rows.forEach(row => row.items.sort((a,b)=>a.rect.left-b.rect.left));
+
+      let row = rows.find(R => y >= R.top && y <= R.bottom);
+      if (!row){
+        row = rows.reduce((best, cur) => {
+          const cy = (cur.top + cur.bottom) / 2;
+          const d = Math.abs(y - cy);
+          return !best || d < best.d ? { ref: cur, d } : best;
+        }, null).ref;
+      }
+
+      for (const it of row.items){
+        const mid = it.rect.left + it.rect.width / 2;
+        if (x < mid) return { type: 'before', node: it.node };
+      }
+      return { type: 'after', node: row.items[row.items.length-1].node };
     }
 
     function onPointerUp(e){
       if (!dragState) return;
       const { card, placeholder } = dragState;
-
       card.releasePointerCapture(e.pointerId);
       card.onpointermove = null;
       card.onpointerup = null;
       card.onpointercancel = null;
 
+      const moved = Math.abs(e.clientX - dragState.startX) + Math.abs(e.clientY - dragState.startY);
+
       if (!dragState.started){
-        // Treat as click
+        // Treat as a tap if minimal movement
         card.style.visibility = '';
         dragState = null;
-        card.click();
+        if (moved <= TAP_THRESHOLD){
+          window.open(card.dataset.url, '_blank');
+        }
         return;
       }
 
-      // Compute target global index using neighbors
-      let toGlobal;
+      isDropping = true;
+      setTimeout(() => { isDropping = false; }, 150);
+
+      let toGlobal, anchor;
       const beforeEl = placeholder.nextElementSibling && placeholder.nextElementSibling.classList && placeholder.nextElementSibling.classList.contains('card') ? placeholder.nextElementSibling : null;
       const afterEl = placeholder.previousElementSibling && placeholder.previousElementSibling.classList && placeholder.previousElementSibling.classList.contains('card') ? placeholder.previousElementSibling : null;
-      if (beforeEl){ toGlobal = Number(beforeEl.dataset.gindex); }
-      else if (afterEl){ toGlobal = Number(afterEl.dataset.gindex) + 1; }
-      else { toGlobal = getLinks().length; }
+      if (beforeEl){ toGlobal = Number(beforeEl.dataset.gindex); anchor = 'before'; }
+      else if (afterEl){ toGlobal = Number(afterEl.dataset.gindex) + 1; anchor = 'after'; }
+      else { toGlobal = getLinks().length; anchor = 'end'; }
 
       const fromGlobal = Number(card.dataset.gindex);
 
-      // Cleanup UI
       card.style.visibility = '';
       if (dragState.ghost) dragState.ghost.remove();
       if (dragState.placeholder) dragState.placeholder.remove();
       dragState = null;
 
-      reorderGlobal(fromGlobal, toGlobal);
+      reorderGlobal(fromGlobal, toGlobal, anchor);
     }
 
-    // Initial seed
     if (!localStorage.getItem(LS_KEY)){
       setLinks([
         { url: 'https://www.amazon.com', title: 'Amazon', desc: 'Shopping', group: 'General' },
@@ -723,6 +771,65 @@
     }
 
     render();
-  </script>
+  
+        // Ensure a visible version label in Settings every time it opens
+        function ensureVersionLabel(){
+          const dlg = document.getElementById('settingsDialog');
+          if (!dlg) return;
+          // Header badge
+          const sheet = dlg.querySelector('.sheet');
+          if (sheet){
+            let headerRow = sheet.querySelector('.settings-header-row');
+            const h2 = sheet.querySelector('h2');
+            if (h2 && !headerRow){
+              headerRow = document.createElement('div');
+              headerRow.className = 'settings-header-row';
+              headerRow.style.display = 'flex';
+              headerRow.style.justifyContent = 'space-between';
+              headerRow.style.alignItems = 'center';
+              h2.replaceWith(headerRow);
+              const h2c = document.createElement('h2');
+              h2c.textContent = 'Settings';
+              h2c.style.margin = '0';
+              const ver = document.createElement('div');
+              ver.id = 'versionHeader';
+              ver.textContent = `${APP_NAME} ${VERSION}`;
+              ver.style.fontSize = '12px';
+              ver.style.color = '#64748b';
+              ver.style.fontWeight = '600';
+              headerRow.appendChild(h2c);
+              headerRow.appendChild(ver);
+            } else {
+              const vh = sheet.querySelector('#versionHeader');
+              if (vh) vh.textContent = `${APP_NAME} ${VERSION}`;
+            }
+            // Footer badge
+            let actionsRow = sheet.querySelector('.actions-row');
+            if (!actionsRow){
+              const actions = sheet.querySelector('.actions');
+              if (actions){
+                actionsRow = document.createElement('div');
+                actionsRow.className = 'actions-row';
+                const left = document.createElement('div');
+                left.className = 'version-left';
+                left.id = 'versionFooter';
+                left.textContent = `${APP_NAME} ${VERSION}`;
+                const right = document.createElement('div');
+                right.className = 'actions-right';
+                while (actions.firstChild){
+                  right.appendChild(actions.firstChild);
+                }
+                actions.replaceWith(actionsRow);
+                actionsRow.appendChild(left);
+                actionsRow.appendChild(right);
+              }
+            } else {
+              const vf = sheet.querySelector('#versionFooter');
+              if (vf) vf.textContent = `${APP_NAME} ${VERSION}`;
+            }
+          }
+        }
+
+      </script>
 </body>
 </html>
