@@ -1,7 +1,11 @@
 # CHANGELOG
 
-## v1.2.1  2025-10-13
-- Baseline established from v1.2.1.  Tag recommended `baseline-v1.2.1`.  
-- Drag and drop uses Pointer Events with custom ghost and placeholder.  
-- Search bars and tiles use white backgrounds.  
-- Settings button anchored top right.  Title editable in place with ellipsis when long.  
+## v1.4.7 — 2025-10-13
+### Added
+- Robust version labels injected at runtime so they are always visible regardless of previous markup.
+
+### Cosmetic
+- Title spacing increased, with extra margin below the title.
+
+### Integrity
+- Kept tile logic and drag code untouched from the last known good build.
