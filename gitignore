@@ -1,0 +1,17 @@
+# Ignore archive and temporary folders
+Archive/
+archive/
+*.zip
+
+# macOS & Windows system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE or editor configs
+.vscode/
+.idea/
+
+# Logs and caches
+*.log
+__pycache__/

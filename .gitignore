@@ -1,0 +1,8 @@
+# Local archives and exports
+Archive/
+*.zip
+dashboard-backup.json
+
+# OS noise
+.DS_Store
+Thumbs.db
