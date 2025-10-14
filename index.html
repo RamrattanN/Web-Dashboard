@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dashboard</title>
   <!--
-  WebDashboard v1.4.9
+  WebDashboard v1.5.0
   Author: Nilesh Ramrattan
   Solution concept and implementation assisted by ChatGPT (OpenAI)
   -->
@@ -317,7 +317,7 @@
     const ST_KEY = 'startpage.settings.v1';
     const IC_KEY = 'startpage.iconcache.v1';
     const APP_NAME='WebDashboard';
-    const VERSION='v1.4.9';
+    const VERSION='v1.5.0';
     const grid = document.getElementById('grid');
     const groupBar = document.getElementById('groupBar');
     const logo = document.getElementById('logo');
@@ -871,6 +871,84 @@
 
   // Run once on load in case settings already request Bing
   document.addEventListener('DOMContentLoaded', () => { if (typeof window.applyWallpaper === 'function') window.applyWallpaper(); });
+})();
+</script>
+
+
+<script>
+// v1.5.0 Bing Daily wallpaper hardening injected by packager
+(function(){
+  if (window.__wdBingInjection) return;
+  window.__wdBingInjection = true;
+
+  async function loadBingDaily(mkt) {
+    try {
+      const market = (mkt || 'en-US').trim();
+      const res = await fetch('https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=' + encodeURIComponent(market));
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      const raw = (data && data.images && data.images[0] && data.images[0].url) || '';
+      if (!raw) throw new Error('No image URL in Bing payload');
+      const full = raw.startsWith('http') ? raw : ('https://www.bing.com' + raw);
+      const img = new Image();
+      img.onload = function(){
+        document.body.style.backgroundImage = 'url(\"' + full + '\")';
+        document.body.style.backgroundAttachment = 'fixed';
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center';
+      };
+      img.onerror = function(){
+        console.warn('Bing image failed to load.  Preserving previous background.');
+      };
+      img.referrerPolicy = 'no-referrer';
+      img.src = full;
+    } catch (e) {
+      console.warn('Bing daily fetch failed.  Preserving previous background.', e);
+    }
+  }
+
+  // Run once on load if user selected Bing daily
+  document.addEventListener('DOMContentLoaded', function(){
+    try {
+      // Try several likely keys for settings
+      const keys = ['wd_settings', 'settings', 'dashboard_settings'];
+      let settings = null;
+      for (const k of keys) {
+        const v = localStorage.getItem(k);
+        if (v) { try { settings = JSON.parse(v); break; } catch(_){} }
+      }
+      const mode = (settings && (settings.wallpaperMode || settings.wallpaper || '') || '').toLowerCase();
+      const kw =  (settings && (settings.wallpaperKeyword || settings.imageKeyword)) || 'en-US';
+      if (mode.includes('bing')) {
+        loadBingDaily(kw);
+      }
+    } catch (e) {
+      // As a safe default we do nothing
+    }
+  });
+})();
+</script>
+
+
+<script>
+// Ensure all visible version labels reflect the single source VERSION
+(function(){
+  try{
+    if(typeof VERSION==='undefined'){ window.VERSION='v1.5.0'; }
+    function applyVersionLabel(){
+      var label = 'WebDashboard ' + VERSION;
+      var sels = ['#wd-version','.settings-version','.settings-modal .version','[data-wd-version]'];
+      sels.forEach(function(sel){
+        document.querySelectorAll(sel).forEach(function(el){ el.textContent = label; });
+      });
+    }
+    document.addEventListener('DOMContentLoaded', applyVersionLabel);
+    document.addEventListener('click', function(e){
+      if(e.target && (e.target.id==='settingsBtn' || e.target.closest('[data-open-settings]') )){
+        setTimeout(applyVersionLabel, 0);
+      }
+    });
+  }catch(_){}
 })();
 </script>
 
