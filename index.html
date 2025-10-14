@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dashboard</title>
   <!--
-  WebDashboard v1.4.7
+  WebDashboard v1.4.9
   Author: Nilesh Ramrattan
   Solution concept and implementation assisted by ChatGPT (OpenAI)
   -->
@@ -242,6 +242,7 @@
           <option value="static">Static image URL</option>
           <option value="local">Local image file</option>
           <option value="unsplash">Unsplash keyword daily</option>
+          <option value="bing">Bing daily</option>
           <option value="none">Solid color</option>
         </select>
       </div>
@@ -315,8 +316,8 @@
     const LS_KEY = 'startpage.links.v1';
     const ST_KEY = 'startpage.settings.v1';
     const IC_KEY = 'startpage.iconcache.v1';
-        const APP_NAME='WebDashboard';
-        const VERSION='v1.4.7';
+    const APP_NAME='WebDashboard';
+    const VERSION='v1.4.9';
     const grid = document.getElementById('grid');
     const groupBar = document.getElementById('groupBar');
     const logo = document.getElementById('logo');
@@ -325,7 +326,8 @@
     function setLinks(arr){ localStorage.setItem(LS_KEY, JSON.stringify(arr)); }
     function getSettings(){
       const defaults = {
-        mode:'static', value:'https://source.unsplash.com/1600x900/?cityscape', color:'#0b1120',
+        // Default to Bing daily so first-run shows a wallpaper immediately
+        mode:'bing', value:'en-US', color:'#0b1120',
         maxTiles:60, showDesc:'yes', groupFilter:'All', showExtraSearch:'yes',
         layout:'cozy', aiDefault:'off', title:'Dashboard',
         colsMax: 10, tileWidth: 220, lockLayout: 'no'
@@ -452,44 +454,44 @@
       render();
     }
     function removeAt(globalIndex){ const arr = getLinks(); arr.splice(globalIndex,1); setLinks(arr); render(); }
-        // Rebuild array order from current DOM order of visible cards plus the dragged item.
-        function commitOrderFromDOM(dragGIndex, insertPos){
-          const st = getSettings();
-          const allCards = Array.from(grid.querySelectorAll('.card')); // visible cards, not including placeholder
-          const visibleG = allCards.map(c => Number(c.dataset.gindex));
-          const newVisible = visibleG.slice();
-          // insert dragged global index at the placeholder slot
-          newVisible.splice(insertPos, 0, dragGIndex);
+    // Rebuild array order from current DOM order of visible cards plus the dragged item.
+    function commitOrderFromDOM(dragGIndex, insertPos){
+      const st = getSettings();
+      const allCards = Array.from(grid.querySelectorAll('.card')); // visible cards, not including placeholder
+      const visibleG = allCards.map(c => Number(c.dataset.gindex));
+      const newVisible = visibleG.slice();
+      // insert dragged global index at the placeholder slot
+      newVisible.splice(insertPos, 0, dragGIndex);
 
-          // If All groups are shown, we can directly reorder the whole array by this sequence
-          const arr = getLinks();
-          if (!st.groupFilter || st.groupFilter === 'All'){
-            // Build map gindex -> object reference
-            const objects = arr.map(x => x);
-            const reordered = newVisible.map(g => objects[g]);
-            setLinks(reordered);
-            return;
-          }
+      // If All groups are shown, we can directly reorder the whole array by this sequence
+      const arr = getLinks();
+      if (!st.groupFilter || st.groupFilter === 'All'){
+        // Build map gindex -> object reference
+        const objects = arr.map(x => x);
+        const reordered = newVisible.map(g => objects[g]);
+        setLinks(reordered);
+        return;
+      }
 
-          // Otherwise, reorder only the items of the active group in place, preserving other items.
-          const active = st.groupFilter.toLowerCase();
-          const objects = arr.map(x => x);
-          // Determine which global indices are part of the active group
-          const activeIndices = arr.map((x, i) => ((x.group||'').toLowerCase() === active) ? i : -1).filter(i => i >= 0);
-          // Filter newVisible to active-only and convert to objects
-          const activeNewSequence = newVisible.filter(i => activeIndices.includes(i)).map(i => objects[i]);
-          // Now stitch back: walk original arr, and whenever we hit an active index, pull the next from activeNewSequence
-          let cursor = 0;
-          const result = arr.map((item, idx) => {
-            if (activeIndices.includes(idx)){
-              const nextObj = activeNewSequence[cursor++];
-              return nextObj;
-            } else {
-              return item;
-            }
-          });
-          setLinks(result);
+      // Otherwise, reorder only the items of the active group in place, preserving other items.
+      const active = st.groupFilter.toLowerCase();
+      const objects = arr.map(x => x);
+      // Determine which global indices are part of the active group
+      const activeIndices = arr.map((x, i) => ((x.group||'').toLowerCase() === active) ? i : -1).filter(i => i >= 0);
+      // Filter newVisible to active-only and convert to objects
+      const activeNewSequence = newVisible.filter(i => activeIndices.includes(i)).map(i => objects[i]);
+      // Now stitch back: walk original arr, and whenever we hit an active index, pull the next from activeNewSequence
+      let cursor = 0;
+      const result = arr.map((item, idx) => {
+        if (activeIndices.includes(idx)){
+          const nextObj = activeNewSequence[cursor++];
+          return nextObj;
+        } else {
+          return item;
         }
+      });
+      setLinks(result);
+    }
 
 
     function openLinkDialog(mode, item={}, globalIndex=-1){
@@ -568,8 +570,8 @@
     const backupRemindInput = document.getElementById('backupRemind');
 
     settingsBtn.onclick = () => {
-          setTimeout(ensureVersionLabel, 0);
-          const vf=document.getElementById('versionFooter'); if(vf){vf.textContent=`${APP_NAME} ${VERSION}`;}
+      setTimeout(ensureVersionLabel, 0);
+      const vf=document.getElementById('versionFooter'); if(vf){vf.textContent=`${APP_NAME} ${VERSION}`;}
       const st = getSettings();
       wallpaperMode.value = st.mode||'static'; wallpaperValue.value = st.value||''; wallpaperColor.value = st.color||'#0b1120';
       maxTilesInput.value = st.maxTiles||60; showDescInput.value = st.showDesc||'yes'; defaultGroupInput.value = st.groupFilter||'All';
@@ -772,64 +774,105 @@
 
     render();
   
-        // Ensure a visible version label in Settings every time it opens
-        function ensureVersionLabel(){
-          const dlg = document.getElementById('settingsDialog');
-          if (!dlg) return;
-          // Header badge
-          const sheet = dlg.querySelector('.sheet');
-          if (sheet){
-            let headerRow = sheet.querySelector('.settings-header-row');
-            const h2 = sheet.querySelector('h2');
-            if (h2 && !headerRow){
-              headerRow = document.createElement('div');
-              headerRow.className = 'settings-header-row';
-              headerRow.style.display = 'flex';
-              headerRow.style.justifyContent = 'space-between';
-              headerRow.style.alignItems = 'center';
-              h2.replaceWith(headerRow);
-              const h2c = document.createElement('h2');
-              h2c.textContent = 'Settings';
-              h2c.style.margin = '0';
-              const ver = document.createElement('div');
-              ver.id = 'versionHeader';
-              ver.textContent = `${APP_NAME} ${VERSION}`;
-              ver.style.fontSize = '12px';
-              ver.style.color = '#64748b';
-              ver.style.fontWeight = '600';
-              headerRow.appendChild(h2c);
-              headerRow.appendChild(ver);
-            } else {
-              const vh = sheet.querySelector('#versionHeader');
-              if (vh) vh.textContent = `${APP_NAME} ${VERSION}`;
+    // Ensure a visible version label in Settings every time it opens
+    function ensureVersionLabel(){
+      const dlg = document.getElementById('settingsDialog');
+      if (!dlg) return;
+      // Footer badge only, to match your UX
+      const sheet = dlg.querySelector('.sheet');
+      if (sheet){
+        let actionsRow = sheet.querySelector('.actions-row');
+        if (!actionsRow){
+          const actions = sheet.querySelector('.actions');
+          if (actions){
+            actionsRow = document.createElement('div');
+            actionsRow.className = 'actions-row';
+            const left = document.createElement('div');
+            left.className = 'version-left';
+            left.id = 'versionFooter';
+            left.textContent = `${APP_NAME} ${VERSION}`;
+            const right = document.createElement('div');
+            right.className = 'actions-right';
+            while (actions.firstChild){
+              right.appendChild(actions.firstChild);
             }
-            // Footer badge
-            let actionsRow = sheet.querySelector('.actions-row');
-            if (!actionsRow){
-              const actions = sheet.querySelector('.actions');
-              if (actions){
-                actionsRow = document.createElement('div');
-                actionsRow.className = 'actions-row';
-                const left = document.createElement('div');
-                left.className = 'version-left';
-                left.id = 'versionFooter';
-                left.textContent = `${APP_NAME} ${VERSION}`;
-                const right = document.createElement('div');
-                right.className = 'actions-right';
-                while (actions.firstChild){
-                  right.appendChild(actions.firstChild);
-                }
-                actions.replaceWith(actionsRow);
-                actionsRow.appendChild(left);
-                actionsRow.appendChild(right);
-              }
-            } else {
-              const vf = sheet.querySelector('#versionFooter');
-              if (vf) vf.textContent = `${APP_NAME} ${VERSION}`;
-            }
+            actions.replaceWith(actionsRow);
+            actionsRow.appendChild(left);
+            actionsRow.appendChild(right);
           }
+        } else {
+          const vf = sheet.querySelector('#versionFooter');
+          if (vf) vf.textContent = `${APP_NAME} ${VERSION}`;
         }
+      }
+    }
 
-      </script>
+  </script>
+
+<!-- Bing wallpaper support (non-invasive) -->
+<script>
+(function(){
+  const WP_EL = document.getElementById('wallpaper');
+
+  async function fetchBingDailyUrl(mkt){
+    const market = (mkt || 'en-US').trim();
+    const resp = await fetch(`https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=${encodeURIComponent(market)}`);
+    const data = await resp.json();
+    let u = data && data.images && data.images[0] && data.images[0].url;
+    if (!u) throw new Error('No image from Bing');
+    if (u.startsWith('/')) u = 'https://www.bing.com' + u;
+    if (!/[?&](w|h)=/i.test(u) && !/UHD\.jpg/i.test(u)){
+      const w = Math.max(1280, window.innerWidth || 1920);
+      const h = Math.max(720, window.innerHeight || 1080);
+      u += (u.includes('?') ? '&' : '?') + `w=${w}&h=${h}`;
+    }
+    return u;
+  }
+
+  function preload(url){
+    return new Promise((res, rej) => {
+      const img = new Image();
+      img.referrerPolicy = 'no-referrer';
+      img.onload = () => res(url);
+      img.onerror = rej;
+      img.src = url;
+    });
+  }
+
+  function setBg(url){
+    if (!WP_EL) { document.body.style.backgroundImage = `url('${url}')`; document.body.style.backgroundSize = 'cover'; document.body.style.backgroundPosition = 'center center'; document.body.style.backgroundAttachment = 'fixed'; return; }
+    WP_EL.style.background = 'none';
+    WP_EL.style.backgroundImage = `url('${url}')`;
+    WP_EL.style.backgroundSize = 'cover';
+    WP_EL.style.backgroundPosition = 'center center';
+    WP_EL.style.backgroundAttachment = 'fixed';
+  }
+
+  // Keep original
+  const _applyWallpaper = window.applyWallpaper;
+
+  window.applyWallpaper = async function(){
+    try{
+      const st = (typeof getSettings === 'function') ? getSettings() : null;
+      const raw = (st && st.value || '').trim();
+      if (st && (st.mode === 'bing' || (st.mode === 'unsplash' && /^bing:/i.test(raw)))){
+        const locale = st.mode === 'bing' ? (raw || 'en-US') : (raw.split(':')[1] || 'en-US');
+        const url = await fetchBingDailyUrl(locale);
+        const ready = await preload(url);
+        setBg(ready);
+        return;
+      }
+    }catch(e){
+      console.warn('Bing wallpaper failed, falling back:', e);
+    }
+    // Fallback to original
+    if (typeof _applyWallpaper === 'function'){ return _applyWallpaper(); }
+  };
+
+  // Run once on load in case settings already request Bing
+  document.addEventListener('DOMContentLoaded', () => { if (typeof window.applyWallpaper === 'function') window.applyWallpaper(); });
+})();
+</script>
+
 </body>
 </html>
