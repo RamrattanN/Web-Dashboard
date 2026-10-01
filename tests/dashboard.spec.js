@@ -497,7 +497,8 @@ test('icon lookup falls back to a service for the current host, skips placeholde
   const google = 'https://www.google.com/s2/favicons?domain=chatgpt.com&sz=128';
   let requests = await icons(page, {links: [legacyChat], serve: [[/google\.com\/s2\/favicons\?domain=chatgpt\.com&/, 128]]});
   await loaded(page, google);
-  expect(requests.map(request => request.url).slice(0, 3)).toEqual([OFFICIAL, 'https://chatgpt.com/favicon.ico', 'https://chatgpt.com/favicon-32x32.png']);
+  // Playwright drops every favicon.ico request without reporting it, so that path never appears in these lists.
+  expect(requests.map(request => request.url).slice(0, 3)).toEqual([OFFICIAL, 'https://chatgpt.com/favicon-32x32.png', 'https://chatgpt.com/favicon-64x64.png']);
   expect(requests.some(request => /clearbit|faviconkit|chat\.openai\.com/.test(request.url))).toBe(false);
   expect(requests.every(request => request.origin === undefined)).toBe(true);
   // A 16px "no icon" image and a 1px blank are rejected; with nothing better, the letter monogram is shown and nothing is cached.
@@ -509,11 +510,11 @@ test('icon lookup falls back to a service for the current host, skips placeholde
   expect(await iconCache(page)).toEqual({});
   // Other sites use their own host, and a custom icon is used as saved with no lookup at all.
   await page.unrouteAll();
-  requests = await icons(page, {links: [{url: 'https://example.com/page', title: 'Example', icon: ''}, {url: 'https://chat.openai.com', title: 'Custom', icon: pixel}], serve: [['https://example.com/favicon.ico', 48]]});
-  await loaded(page, 'https://example.com/favicon.ico');
+  requests = await icons(page, {links: [{url: 'https://example.com/page', title: 'Example', icon: ''}, {url: 'https://chat.openai.com', title: 'Custom', icon: pixel}], serve: [['https://example.com/apple-touch-icon.png', 48]]});
+  await loaded(page, 'https://example.com/apple-touch-icon.png');
   await expect(page.locator('#grid .card .favicon img').nth(1)).toHaveAttribute('src', pixel);
-  expect(requests.map(request => request.url)).toEqual(['https://example.com/favicon.ico']);
-  expect(await iconCache(page)).toEqual({'example.com': 'https://example.com/favicon.ico'});
+  expect(requests.map(request => request.url)).toEqual(['32x32.png', '64x64.png', '96x96.png'].map(name => 'https://example.com/favicon-' + name).concat('https://example.com/apple-touch-icon.png'));
+  expect(await iconCache(page)).toEqual({'example.com': 'https://example.com/apple-touch-icon.png'});
 });
 
 test('Refresh icon replaces a stale cached source; a cached source that fails or is blank is looked up again', async ({page}) => {
