@@ -89,7 +89,8 @@
   backup keep it. Failures keep the current background, show a message with
   Try again, and are never saved; slow responses cannot replace a newer
   picture or another mode. Other wallpaper modes are unchanged and Bing
-  daily stays disabled. Owner acceptance on the real dashboard is pending.
+  daily stays disabled. Accepted by the owner on the real dashboard at
+  `fd8b37e` (Chrome on macOS, `file://`).
 - Owner visual acceptance of the refresh, the All button and the Duck.ai row
   was given on 2026-10-01 at `327ff8c` (Chrome on macOS). The ChatGPT icon
   fix was accepted by the owner at `0c22c32`.

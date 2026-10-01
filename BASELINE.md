@@ -295,9 +295,10 @@ handling and the official ChatGPT icon source are unchanged.
 | 16x16 and 32x32 icons display and are cached with no later fallback; cached icons at both sizes are reused with no rediscovery; 1px and failed sources advance to the next valid source; exhausted sources show the monogram; custom icons unchanged; ChatGPT icon tests still pass | CI (Linux Chromium) with decodable PNG fixtures of exact sizes supplied by the test | The dashboard's logic. Nothing is fetched from real icon services |
 | Effect on the owner's dashboard | Not separately checked by the owner | The owner's ChatGPT icon is 180px and is unaffected by the size limit |
 
-## Picsum daily wallpaper — implemented, owner dashboard acceptance pending
+## Picsum daily wallpaper — accepted by the owner at `fd8b37e`
 
-Added after the acceptances above; none of them covers it.
+Added after the acceptances above; none of them covers it. Its own owner
+acceptance is recorded at the end of this section.
 
 Behaviour: wallpaper mode `picsum` loads
 `https://picsum.photos/seed/{seed}/1920/1080` as an ordinary image and
@@ -316,10 +317,30 @@ solid colour is kept behind the photo and is what shows when no photo loads.
 | Seed A displays, reload displays A, Seed B displays, a failed request preserves B, on `file://` and on localhost | Owner's isolated Picsum investigation, Chrome on macOS, before this implementation | That Picsum images load directly in the owner's browser. It did not exercise the dashboard. Browser version, image dimensions and timings were not recorded |
 | Daily seed from the local date (including a timezone ahead of UTC); same-day reload; new day; Change picture and its persistence; failure keeps the background, shows the message, saves nothing and does not auto-retry; Try again; fresh load with no photo keeps the solid colour; slow responses cannot replace a newer picture or another mode; switching modes in Settings; export and import, older backups, malformed seeds | CI (Linux Chromium) with every picsum.photos response supplied by the test and the clock fixed | The dashboard's logic. Nothing is fetched from Picsum |
 | Header with Change picture at 1440, 820 and 375 px, the failure message, and the Settings explanation | CI layout and contrast assertions, and agent inspection of the CI screenshots | Linux Chromium with a flat grey stand-in image |
-| Picsum daily on the real dashboard: loading, Change picture, reload, failure retention | **Pending owner check** | |
+| Picsum daily on the real dashboard: loading, Change picture, reload, failure retention, switching back | Owner, Chrome on macOS, at `fd8b37e` | Real provider, real browser and the owner's own data; see below |
 
 Limits: a different seed does not guarantee a different photo; the photo for
 a seed is whatever Picsum serves and may change if Picsum changes its
 catalogue; there is no offline copy, so a reload without network shows the
 solid colour; the day changes only when the dashboard is opened, reloaded or
 redrawn, not on a timer.
+
+### Owner acceptance — 2026-10-01, at `fd8b37e`
+
+Nilesh Ramrattan checked the following by hand in normal Chrome on macOS, in
+the Dashboard Test profile, with the dashboard opened from `file://`, and
+reported all five as passed:
+
+1. Initial loading: selecting Picsum daily and saving shows a photo and the
+   Change picture button.
+2. Reload shows the same photo.
+3. Change picture loads a photo, and it is still shown after a reload.
+4. With the network set to Offline, Change picture leaves the current photo
+   in place and shows the message; Try again succeeds once back online.
+5. Switching back to Local image file restores the saved local image.
+
+This acceptance covers Picsum at `fd8b37e` in that browser and profile. Not
+checked by the owner: the change of photo on a new calendar day (covered by
+CI with a fixed clock only), a page served over `http`, and Safari, Windows
+and touch devices. The 16px icon-size correction in the same head was not
+separately checked by the owner.

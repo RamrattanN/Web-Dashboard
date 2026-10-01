@@ -114,6 +114,6 @@ Entries marked Backlog record future work only: export destination selection, re
 
 ### Wallpaper: Picsum daily
 
-- Status: Implemented on the recovery branch on 2026-10-01; **owner acceptance on the real dashboard pending**.
+- Status: Implemented on the recovery branch and accepted by the owner on 2026-10-01 at `fd8b37e` (loading, same-photo reload, Change picture with persistence, offline failure and retry, switching back to the local image).  The new-day change of photo is covered by CI only.
 - Background: the owner's isolated investigation showed Picsum images load directly in Chrome on macOS from `file://` and localhost.
 - Delivered: a Picsum daily mode seeded by the local date, a Change picture button, same-day persistence of the loaded picture, failure retention with Try again, and backup compatibility.  Bing daily remains disabled and unchanged.  Details and evidence are in BASELINE.md.
