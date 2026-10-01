@@ -18,7 +18,7 @@
 
 ### Settings: group options logically
 
-- Status: Backlog.  Deferred until after the current recovery and acceptance work.
+- Status: Partly implemented in the visual refresh on 2026-10-01; owner visual acceptance pending.  Settings are grouped into Dashboard, Layout and Wallpaper, as authorised for that work.  Still in Backlog: showing or enabling mode-specific wallpaper controls only where relevant, which would change behaviour.
 - Requested: 2026-10-01 during manual Mac acceptance.
 - User need: Make Settings easier to navigate by grouping related controls under clear section headings.
 - Suggested groups: Layout and tiles; Wallpaper and appearance; Search and AI; Backup and data.
@@ -76,7 +76,7 @@
 
 ### Visual refresh: adopt the Ramrattan Rentals design baseline
 
-- Status: Backlog.  Deferred until Claude's current functional fixes, review, CI, and manual acceptance are complete.
+- Status: Implemented on the recovery branch on 2026-10-01; **owner visual acceptance pending**.  CI passes, and the validation evidence and its limits are recorded in BASELINE.md.  Not merged or released.
 - Requested: 2026-10-01.
 - User direction: Finish the existing Claude workload first.  Prepare the cosmetic implementation work order later.
 - Specification: [DESIGN_BASELINE.md](DESIGN_BASELINE.md), containing the pinned Rentals source reference, exact palette, typography, icon style, brand asset, surfaces, controls, and verification requirements.
@@ -87,7 +87,7 @@
   - Correct the unreadable dashboard tip text.
   - Preserve existing users' wallpaper choices and all functional behaviour.
 - Acceptance: Verify desktop and narrow-screen presentation, contrast, keyboard focus, saved wallpapers, long titles, tile sizing and density controls, and existing functional regression checks.
-- Do not implement this item or start another editing agent while the current functional workload is underway.
+- Implementation was authorised on 2026-10-01 after functional acceptance was completed.
 
 ### Functional follow-ups from the PR #3 review
 
@@ -97,4 +97,4 @@
 - Import of hand-edited backups (review finding F6): numeric settings written as strings, such as `"maxTiles": "3"`, are rejected.  Backups written by the dashboard are unaffected.  Any change must keep validation strict rather than loosen it.
 - Duck.ai search panel: deferred.  Replace the DuckDuckGo panel only once an approach is verified in a browser to carry typed text into Duck.ai.  DuckDuckGo's `!ai` route failed this on 2026-10-01 in Chrome on macOS: `https://duckduckgo.com/?q=%21ai+dashboard+prompt+test+12345` opened ordinary search results, so that route must not be used.  DuckDuckGo search parameters also do not carry over (`duckduckgo.com/chat?q=…` redirects to `duck.ai/chat` without the text).
 
-These entries record future work only.  Application behaviour is unchanged.
+Entries marked Backlog record future work only: export destination selection, recent activity, the functional follow-ups (including F5 and F6), Bing daily and the Duck.ai panel are not implemented.

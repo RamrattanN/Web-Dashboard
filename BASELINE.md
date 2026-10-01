@@ -37,6 +37,8 @@ Node and Playwright are developer-only regression tools.
 - The previous image is retained **in the current page only**. There is no
   persistent Bing image cache; after reload a failed request leaves the base
   color. The saved mode remains Bing even when its request fails.
+- A profile with no saved links and no saved settings starts with the solid
+  colour `#f3f7fa`. No other profile has its wallpaper settings rewritten.
 - Export includes all links, settings, groups, icons, order, and local image
   data, including hidden links. Import validates structure before writing;
   invalid backups leave existing data intact. Storage limits still apply.
@@ -106,6 +108,40 @@ prompt transfer through DuckDuckGo's `!ai` route was tested by the owner and
 **failed** (ordinary search results opened), so that panel change is deferred.
 The steps below are the original checklist, kept for repeating acceptance in
 another browser.
+
+## Visual refresh — implemented, owner acceptance pending
+
+The Ramrattan Rentals design in [DESIGN_BASELINE.md](DESIGN_BASELINE.md) was
+applied after the functional acceptance above. The functional record above
+describes `443a334` and is unchanged; it was not repeated by hand on the
+restyled page. **Visual acceptance by the owner has not been given.**
+
+What changed is presentation only: header, tiles, menus, dialogs, icons,
+fonts and colours. The script changes are limited to icon markup, accessible
+names, group filters rendered as buttons, and the fresh-profile surface
+colour. Storage keys, backup format, ordering, filtering, locking and
+wallpaper handling are untouched. A new profile (no saved links and no saved
+settings) starts on the pale surface `#f3f7fa`; any existing profile keeps
+what it had. The shield logo is the Rentals asset embedded in the file, so
+there is no runtime dependency on Rentals or on Google Fonts.
+
+Evidence, by source:
+
+| Evidence | Source | What it does and does not show |
+| --- | --- | --- |
+| All 28 functional tests still pass on the restyled page | CI (Linux Chromium) | Behaviour is preserved under automation; not a manual Mac re-check |
+| No horizontal overflow and header controls inside the viewport at 1440, 820 and 375 px wide, on pale, dark and image wallpapers | CI assertion | Layout arithmetic only |
+| Text contrast of at least 4.5:1 for tip, tile title and description, group filters (normal and selected), engine labels, placeholders and the header label | CI assertion on computed colours | Measured against each element's own surface, which is opaque, so the wallpaper does not affect it |
+| Every button has an accessible name, no emoji remain in controls, every icon control has a tooltip, and each of the 30 keyboard stops shows a focus indicator | CI assertion | Presence of an outline or ring, not how it looks |
+| Settings and Add link dialogs fit the viewport, scroll, and keep Close/Save on screen with each control focused, at 1440x700 and 375x600 | CI assertion | |
+| Fresh profile gets the pale surface; saved links without saved settings keep the dark default; saved title, colour, filter, lock and tile limit are shown as saved | CI assertion | |
+| Appearance of the header, tiles, hover and menu, selected filter, focus rings, tooltips and both dialogs | Agent inspection of the CI screenshots | Linux Chromium with Liberation Sans standing in for Arial, a synthetic wallpaper, and letter monograms instead of real favicons. Not the owner's Mac, wallpaper or fonts |
+| Tooltip positioning, stacking of the tile menu, reduced-motion rule, narrow-width rules | Code review, partly confirmed by the screenshots | |
+
+Not checked by anyone yet: rendering in Chrome on macOS, the owner's own
+wallpaper and saved tiles, native controls (colour picker, file chooser,
+select menus) on macOS, drag appearance with a real pointer, and Safari.
+
 
 ## Exact Mac acceptance steps
 

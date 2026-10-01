@@ -34,6 +34,28 @@
 - Bing daily is deferred: the option is disabled in Settings because Bing
   blocks browser requests and a real image has never loaded. Saved Bing
   settings are kept. No proxy or backend added.
+- Visual refresh to the Ramrattan Rentals baseline (see DESIGN_BASELINE.md):
+  navy brand header with the Ramrattan shield and the editable title; white
+  cards with pale borders; navy primary and outlined secondary buttons; 2px
+  form controls with a blue focus treatment; Arial/Helvetica instead of
+  Google Fonts, which is no longer loaded.
+- Emoji controls replaced by outline SVG icons with accessible names and
+  hover/focus tooltips. Add link, Import, Export and Settings moved into the
+  header. Group filters are now buttons, so they can be reached by keyboard.
+- Settings grouped into Dashboard, Layout and Wallpaper, with a scrolling
+  body and a pinned header and Close/Save footer. Every setting keeps its
+  behaviour and stored key.
+- The tip text now sits on its own surface and is readable on any wallpaper.
+  The dark vignette over wallpapers was removed because the title no longer
+  sits on the wallpaper.
+- A genuinely new profile starts on the pale Rentals surface (`#f3f7fa`).
+  Existing profiles keep their saved wallpaper; profiles with saved links
+  but no saved settings keep the previous dark default.
+- Tests: the suite's "block all https" rule only matched URLs ending in `/`,
+  so favicon and image requests reached the network. It now blocks every
+  https request. A visual-review spec checks overflow, contrast, focus
+  indicators, control names and dialog scrolling, and uploads screenshots as
+  a CI artifact. Owner visual acceptance on macOS is still pending.
 
 ## v1.4.7 — 2025-10-13
 ### Added

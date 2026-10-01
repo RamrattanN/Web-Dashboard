@@ -134,10 +134,11 @@ test('visual review: controls have names, no emoji, and a visible keyboard focus
     seen.push(focus.what);
     expect(focus.indicated, `focus indicator on ${focus.what}`).toBe(true);
     if (i === 1) { await expect(page.locator('#addBtn')).toBeFocused(); await shot(page, 'desktop-focus-header-action'); }
+    if (focus.what === 'pill' && !seen.slice(0, -1).includes('pill')) await shot(page, 'desktop-focus-group-filter');
+    if (focus.what === 'icon-btn' && !seen.slice(0, -1).includes('icon-btn')) await shot(page, 'desktop-focus-tile-more');
   }
   for (const expected of ['logo', 'settingsBtn', 'gMic', 'pill', 'icon-btn']) expect(seen.join(' ')).toContain(expected);
   expect(seen.length).toBe(18 + 3 + links.length); // header and search controls, group filters, one menu button per tile
-  await shot(page, 'desktop-focus-tile-more');
   // Hover tooltip on an icon control.
   await page.locator('#settingsBtn').hover();
   expect(await page.evaluate(() => getComputedStyle(document.getElementById('settingsBtn'), '::after').display)).toBe('block');
