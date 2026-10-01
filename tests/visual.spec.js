@@ -18,8 +18,10 @@ const zlib = require('node:zlib');
 function png(size) {
   const crc = buf => { let c = ~0; for (const b of buf) { c ^= b; for (let k = 0; k < 8; k++) c = c & 1 ? (c >>> 1) ^ 0xEDB88320 : c >>> 1; } return ~c >>> 0; };
   const chunk = (type, data) => { const body = Buffer.concat([Buffer.from(type), data]); const o = Buffer.alloc(body.length + 8); o.writeUInt32BE(data.length, 0); body.copy(o, 4); o.writeUInt32BE(crc(body), body.length + 4); return o; };
+  // Each row is a filter-type byte of 0 followed by one grey byte per pixel; any other filter byte makes the image undecodable.
+  const rows = Buffer.alloc((size + 1) * size, 0x70); for (let y = 0; y < size; y++) rows[y * (size + 1)] = 0;
   const header = Buffer.alloc(13); header.writeUInt32BE(size, 0); header.writeUInt32BE(size, 4); header[8] = 8; header[9] = 0;
-  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', header), chunk('IDAT', zlib.deflateSync(Buffer.alloc((size + 1) * size, 0x70))), chunk('IEND', Buffer.alloc(0))]);
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', header), chunk('IDAT', zlib.deflateSync(rows)), chunk('IEND', Buffer.alloc(0))]);
 }
 
 // Reduced motion keeps computed colours and screenshots free of half-finished transitions.

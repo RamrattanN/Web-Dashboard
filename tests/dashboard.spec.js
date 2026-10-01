@@ -456,8 +456,10 @@ const zlib = require('node:zlib');
 function png(size) {
   const crc = buf => { let c = ~0; for (const b of buf) { c ^= b; for (let k = 0; k < 8; k++) c = c & 1 ? (c >>> 1) ^ 0xEDB88320 : c >>> 1; } return ~c >>> 0; };
   const chunk = (type, data) => { const body = Buffer.concat([Buffer.from(type), data]); const out = Buffer.alloc(body.length + 8); out.writeUInt32BE(data.length, 0); body.copy(out, 4); out.writeUInt32BE(crc(body), body.length + 4); return out; };
+  // Each row is a filter-type byte of 0 followed by one grey byte per pixel; any other filter byte makes the image undecodable.
+  const rows = Buffer.alloc((size + 1) * size, 0x80); for (let y = 0; y < size; y++) rows[y * (size + 1)] = 0;
   const header = Buffer.alloc(13); header.writeUInt32BE(size, 0); header.writeUInt32BE(size, 4); header[8] = 8; header[9] = 0; // 8-bit greyscale
-  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', header), chunk('IDAT', zlib.deflateSync(Buffer.alloc((size + 1) * size, 0x80))), chunk('IEND', Buffer.alloc(0))]);
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', header), chunk('IDAT', zlib.deflateSync(rows)), chunk('IEND', Buffer.alloc(0))]);
 }
 const OFFICIAL = 'https://cdn.oaistatic.com/assets/favicon-180x180-od45eci6.webp';
 const HORSE = 'https://icon.horse/icon/chat.openai.com';
@@ -480,6 +482,7 @@ const loaded = async (page, src, size, which = 0) => {
   const img = page.locator('#grid .card .favicon img').nth(which);
   await expect(img).toHaveAttribute('src', src);
   await expect.poll(() => img.evaluate(el => el.complete ? el.naturalWidth : -1)).toBe(size);
+  expect(await img.evaluate(el => el.decode().then(() => 'decoded', () => 'undecodable'))).toBe('decoded');
 };
 const iconCache = page => page.evaluate(() => JSON.parse(localStorage.getItem('startpage.iconcache.v1') || '{}'));
 
@@ -573,6 +576,8 @@ test('Picsum daily shows the picture for the local day, keeps it on a same-day r
   const net = await startPicsum(page);
   await net.reload();
   await picsumShown(page, 'daily-2026-10-01');
+  // The stand-in picture is a real, decodable image, so "shown" means painted, not merely requested.
+  expect(await page.evaluate(src => { const img = new Image(); img.src = src; return img.decode().then(() => img.naturalWidth, () => 'undecodable'); }, picsumUrl('daily-2026-10-01'))).toBe(64);
   await expect(page.locator('#wallpaper')).toHaveCSS('background-color', 'rgb(18, 52, 86)');
   await expect.poll(() => picsumSaved(page)).toEqual({mode: 'picsum', seed: 'daily-2026-10-01', date: '2026-10-01'});
   await expect(page.locator('#changePictureBtn')).toBeVisible();
