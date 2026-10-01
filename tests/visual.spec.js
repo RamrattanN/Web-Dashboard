@@ -151,7 +151,8 @@ test('visual review: controls have names, no emoji, and a visible keyboard focus
   await expect(page.locator('#duckStatus')).toHaveClass(/error/);
   await shot(page, 'desktop-duck-copy-failed');
   await page.setViewportSize(viewports.phone);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+  // The grid recomputes its columns on the resize event, so wait for that before measuring.
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
   await shot(page, 'phone-duck-copy-failed');
   await page.setViewportSize(viewports.desktop);
   // Hover tooltip on an icon control.
