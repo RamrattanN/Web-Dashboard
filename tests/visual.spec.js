@@ -228,6 +228,21 @@ for (const size of ['desktop', 'phone']) test(`visual review: ${size} dialogs fi
     expect(await visible('#saveSettingsBtn'), `Save visible with ${id} focused`).toBe(true);
   }
   await shot(page, `${size}-settings-bottom`);
+  // Paired fields: side by side their controls are level even when one label wraps; on a narrow screen they stack.
+  const pairs = await page.locator('#settingsDialog .row').evaluateAll(rows => rows.map(row => {
+    const [a, b] = Array.from(row.querySelectorAll('input, select')).map(el => el.getBoundingClientRect());
+    const labels = Array.from(row.querySelectorAll('label')).map(el => ({lines: Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)), clipped: el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1}));
+    return {name: row.querySelector('label').textContent, top: Math.abs(a.top - b.top), bottom: Math.abs(a.bottom - b.bottom), sameColumn: Math.abs(a.left - b.left) < 1, below: b.top >= a.bottom, labels};
+  }));
+  expect(pairs.length).toBe(6);
+  for (const pair of pairs) {
+    expect(pair.labels.some(label => label.clipped), `${pair.name}: labels fully shown`).toBe(false);
+    if (size === 'phone') { expect(pair.sameColumn && pair.below, `${pair.name}: stacked`).toBe(true); continue; }
+    expect(pair.top, `${pair.name}: control tops level`).toBeLessThanOrEqual(1);
+    expect(pair.bottom, `${pair.name}: control bottoms level`).toBeLessThanOrEqual(1);
+  }
+  // The case that prompted this check: the wallpaper value label wraps to two lines beside a one-line label.
+  if (size === 'desktop') expect(pairs.find(pair => pair.name.startsWith('Image URL')).labels.map(label => label.lines)).toEqual([2, 1]);
   await page.locator('#wallpaperMode').focus();
   await expect(page.locator('#wallpaperMode')).toHaveCSS('border-top-color', 'rgb(47, 120, 184)');
   await page.getByRole('button', {name: 'Close', exact: true}).click();
