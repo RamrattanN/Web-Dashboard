@@ -1,6 +1,6 @@
 # Visual baseline: Ramrattan Rentals
 
-Status: Approved visual direction; implementation pending functional recovery and acceptance.  Recorded 2026-10-01.
+Status: Approved visual direction.  Functional acceptance is complete; the visual refresh is in progress under Claude Code's authorised work order, with owner visual acceptance still pending.  Updated 2026-10-01.
 
 ## Reference
 
@@ -72,10 +72,10 @@ Default page: pale background with a subtle radial blue highlight, as in Rentals
 
 ## Scope and verification
 
-This is a design baseline, not an implementation change.  Apply it after functional fixes and acceptance are complete.
+This document is the design specification.  Functional fixes and acceptance are complete, and implementation is authorised.  It does not itself establish visual acceptance.
 
 - Preserve link opening, ordering, filtering, layout locking, settings persistence, and import/export.
 - Keep the standalone single-file, no-build setup; embed required assets where needed rather than depending on Rentals being available at runtime.
-- Recent activity, export destination selection, and Settings regrouping retain their separately recorded scope and timing.
+- Settings regrouping is included in the current visual work order: dashboard, layout and wallpaper sections, preserving behaviour.  Recent activity and export destination selection remain deferred in Backlog.
 - Verify desktop and narrow-screen layouts, saved wallpapers, long titles, varying tile density and column settings, keyboard focus, and text contrast.
 - Run relevant existing functional checks after styling changes and obtain manual visual acceptance before merging.
