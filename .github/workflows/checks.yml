@@ -7,6 +7,7 @@ permissions:
 jobs:
   browser:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,3 +21,9 @@ jobs:
         run: npx playwright test --grep 'live Bing browser probe'
         env:
           LIVE_BING: '1'
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-failures
+          path: test-results/
+          retention-days: 7

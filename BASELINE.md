@@ -1,16 +1,102 @@
-# Baseline definition  v1.2.1
+# Recovery baseline — v1.5.0-dev (unreleased)
 
-**Scope.** This baseline captures `index.html` plus minimal docs and ignore rules.  Functionally identical to v1.2.1 delivered above.  
+## Provenance and scope
 
-**Supported.** Chrome 141 on Windows and macOS at 100 percent zoom.  
+Recovery starts from `origin/main` at `b08b98b` (v1.4.7). Reviewed
+`origin/feature/next` at `035d5bc`: recovered the Bing mode and image-preload
+intent, but not its overlapping wallpaper scripts, guessed storage keys,
+Bing default, or older privacy claims. `SECURITY.md` is preserved unchanged.
+The v1.5.0 tag on that unfinished branch is not a verified release baseline.
 
-**Non goals.** No service worker, no build step, no external dependencies.  
+The application is still one `index.html`, opened directly or served as a
+static file. No build, runtime package install, proxy, or backend is required.
+Node and Playwright are developer-only regression tools.
 
-**Regression checklist.**
-- Tiles open in a new tab on single click.  
-- Tiles can be reordered across rows with pointer drag.  
-- Group filter does not misplace drops.  
-- Settings persist in `localStorage`.  
-- Import and Export work and preserve order, groups, icons, and wallpaper.  
+## Behaviour under test
 
-**Tag.** `baseline-v1.2.1`.
+- One click opens a tile in a new tab. Layout lock disables dragging while
+  preserving opening and menu actions.
+- Pointer dragging works between rows in both directions. Reordering replaces
+  only visible array slots. Other groups and links beyond `maxTiles` keep
+  their exact positions and content; no hidden entries are dropped.
+- Settings use `startpage.settings.v1`; links use `startpage.links.v1`.
+  Save persists; Close, Cancel, and Escape discard dialog edits, including
+  a selected local wallpaper. Pointer cancellation does not open or reorder.
+- One wallpaper implementation handles all modes. Images are preloaded before
+  replacement; network/HTTP/JSON/image failures retain the currently displayed
+  image or color. Loading times out after 15 seconds; stale requests cannot
+  replace a newer selection. Failed selections retry on a subsequent Save or
+  render. Successful selections are reused during that page session/day.
+- The previous image is retained **in the current page only**. There is no
+  persistent Bing image cache; after reload a failed request leaves the base
+  color. The saved mode remains Bing even when its request fails.
+- Export includes all links, settings, groups, icons, order, and local image
+  data, including hidden links. Import validates structure before writing;
+  invalid backups leave existing data intact. Storage limits still apply.
+
+## Verification record
+
+Automated checks and a separate live Bing diagnostic run in GitHub Actions
+with Chromium. See the recovery PR for the exact run and result. Local inline
+JavaScript syntax and `git diff --check` are checked separately.
+
+Mac browser execution in the development agent was blocked: Chrome launch
+aborted under host restrictions, and the browser-control tool denied `file:`
+URLs. Do not interpret CI results as Mac/Safari acceptance. The checklist
+below remains a manual acceptance gate. Windows and touch-device behaviour
+have not been reverified.
+
+## Exact Mac acceptance steps
+
+1. Export your existing dashboard first. Use a separate Chrome profile for
+   this check so your normal dashboard data is untouched. In Terminal:
+   ```sh
+   cd /Users/nileshramrattan/Projects/Web-Dashboard
+   git switch recovery/wallpaper-and-regressions
+   open -a "Google Chrome" index.html
+   ```
+   In Chrome press Command+0 for 100% zoom. Verify Settings shows
+   `WebDashboard v1.5.0-dev`.
+2. Import `tests/fixtures/mac-acceptance.json` using Import. It contains 16
+   disposable example.com links, alternating Work/Other groups, a local
+   wallpaper, three columns, and a six-tile display cap. Confirm six tiles
+   appear and a single click opens exactly one new tab.
+3. Drag Tile 0 after Tile 5 across rows. Export: the complete title order must
+   be `1,2,3,4,5,0,6,7,8,9,10,11,12,13,14,15`, prefixed by `Tile `.
+   Drag Tile 0 back before Tile 1 and confirm the original order.
+4. Click Work. Drag Tile 0 after Tile 10. Export: the complete order must be
+   `2,1,4,3,6,5,8,7,10,9,0,11,12,13,14,15`. In particular Other links
+   and hidden Work links 12 and 14 must be unchanged. Click Work again
+   to return to All. Reimport the fixture to reset test data.
+5. Settings: set Lock layout to Yes and Save. Verify dragging does nothing,
+   single-click still opens one tab, and the More menu opens. Reload and
+   confirm the lock and six-tile limit persist. Unlock and Save.
+6. Change the tile limit and choose a local wallpaper file, then Close.
+   Reopen Settings: neither change should be saved. Repeat with Escape.
+   Add link → Cancel with an empty URL must close immediately; edit a tile's
+   title → Cancel must retain its original title. Repeat using Save and
+   reload to confirm saved edits persist.
+7. Reimport the fixture, then choose Bing daily, enter `en-US`, and Save.
+   Open DevTools (Option+Command+I), Network, and filter `HPImageArchive`.
+   If Bing allows the request and the image loads, the wallpaper changes.
+   If blocked by CORS, network, or provider error, the fixture background
+   stays visible and Console reports preservation. Record the outcome;
+   Bing live success is not guaranteed by this no-backend application.
+8. Reimport the fixture. In DevTools Network select Offline, then choose
+   Bing daily and Save. Wait up to 15 seconds. Verify the previous wallpaper
+   stays visible. Switch to Solid color while a wallpaper request is pending;
+   its late completion must not override the color. Restore No throttling.
+   Also try Static image URL `https://example.com/missing-wallpaper.png`;
+   failure must preserve the current background.
+9. Save a local image, Export, reimport the fixture, then Import that export.
+   Verify settings, wallpaper, order, groups, icons, and all 16 links restore.
+   Import a JSON file containing `{"links":[null]}`: expect an error and no
+   changes. A cancelled file picker must do nothing.
+10. In Terminal, optional developer checks (Node 20+ and Chrome installed):
+    ```sh
+    npm ci
+    npm test -- --workers=1
+    LIVE_BING=1 npx playwright test --grep 'live Bing browser probe'
+    ```
+    Repeat steps 2–9 in Safari if Safari support is required. Report browser
+    version and results before treating that browser as accepted.

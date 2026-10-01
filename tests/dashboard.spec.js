@@ -142,3 +142,25 @@ test('live Bing browser probe records provider outcome and preserves fallback on
   if (!success) await expect(page.locator('#wallpaper')).toHaveCSS('background-image', `url("${pixel}")`);
   console.log('LIVE BING: ' + (success ? 'image loaded' : 'provider unavailable; previous image preserved') + '\n' + evidence.join('\n'));
 });
+
+test('single click opens an actual browser tab', async ({page}) => {
+  await setup(page);
+  await page.context().route('https://example.com/**', route => route.fulfill({body:'Destination', contentType:'text/plain'}));
+  const popup = page.waitForEvent('popup');
+  await page.locator('#grid .card').first().click();
+  const destination = await popup;
+  await expect(destination).toHaveURL('https://example.com/0');
+  expect(page.context().pages()).toHaveLength(2);
+});
+
+test('cancel during an active cross-row drag restores the complete collection', async ({page}) => {
+  await setup(page);
+  const box = await page.locator('#grid .card').first().boundingBox();
+  await page.mouse.move(box.x+40, box.y+25); await page.mouse.down();
+  await page.mouse.move(box.x+60, box.y+125, {steps:4});
+  await expect(page.locator('.drag-layer')).toHaveCount(1);
+  await page.locator('#grid .card:not(.placeholder)').first().dispatchEvent('pointercancel', {pointerId:1});
+  await page.mouse.up();
+  await expect(page.locator('.drag-layer, .placeholder')).toHaveCount(0);
+  expect(await saved(page)).toEqual(links);
+});
