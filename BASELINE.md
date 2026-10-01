@@ -36,9 +36,21 @@ Node and Playwright are developer-only regression tools.
 
 ## Verification record
 
-Automated checks and a separate live Bing diagnostic run in GitHub Actions
-with Chromium. See the recovery PR for the exact run and result. Local inline
-JavaScript syntax and `git diff --check` are checked separately.
+On 2026-10-01, [CI run 36889588364](https://github.com/RamrattanN/Web-Dashboard/actions/runs/36889588364)
+passed **16 deterministic checks** using Chromium 145.0.7632.6 on Linux at
+application/test commit `388663f`. The live diagnostic is skipped in that
+suite and runs separately; it also passed its fallback assertion.
+
+The actual Bing archive request from the local-file origin (`null`) was
+blocked by CORS: the response lacked `Access-Control-Allow-Origin`. The
+previous local image remained displayed. Successful Bing loading is covered
+with controlled browser responses; **live Bing image success was not verified**.
+No browser security settings were changed. This recovery does not solve Bing's
+cross-origin restriction. A proxy/backend would need a separate discussion.
+
+Inline JavaScript syntax, dependency audit (zero reported vulnerabilities),
+and `git diff --check` also passed. Subsequent documentation-only commits do
+not change the tested application or tests.
 
 Mac browser execution in the development agent was blocked: Chrome launch
 aborted under host restrictions, and the browser-control tool denied `file:`

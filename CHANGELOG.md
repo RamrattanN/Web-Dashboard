@@ -16,6 +16,9 @@
 - Validate backup structure before import and roll back failed storage writes.
 - Add focused Playwright checks, browser CI, a live Bing diagnostic, and a Mac
   acceptance fixture. CI results do not establish Mac/Safari compatibility.
+- Verification: 16 deterministic Chromium checks passed. A separate live Bing
+  browser request was CORS-blocked and correctly retained the previous image;
+  live Bing success and manual Mac/Safari acceptance remain unverified.
 - Preserve main’s network/privacy guidance and security reporting policy;
   reconcile the stale v1.2.1 baseline document with recovery scope.
 

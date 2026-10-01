@@ -1,6 +1,6 @@
 # WebDashboard — v1.5.0-dev (unreleased)
 
-A customizable single-page browser dashboard with tiles, groups, search, wallpaper, and layout settings.  The released-code starting point for this recovery is v1.4.7 (`b08b98b`); this branch is unreleased development.  No GitHub Release ZIP is currently published.
+A customizable single-page browser dashboard with tiles, groups, search, wallpaper, and layout settings.  The baseline starting point for this recovery is v1.4.7 (`b08b98b`); this branch is unreleased development.  No GitHub Release ZIP is currently published.
 
 ## Run it
 
@@ -19,7 +19,9 @@ The page loads Google Fonts and may request favicons from saved sites or externa
 Bing daily is optional: select it in Settings and enter a market such as
 `en-US` (blank uses `en-US`). The browser contacts Bing directly. Provider
 availability and cross-origin policy can prevent loading; no proxy or backend
-is included. Failed requests preserve the background already displayed on the
+is included. The 2026-10-01 Chromium live-file test was blocked by Bing's CORS
+policy and confirmed preservation of the prior wallpaper; live image loading
+was not verified. Failed requests preserve the background already displayed on the
 page, but that previous image is not cached across reloads. Static URLs and
 local images use the same preload-before-replace path. Solid color is the
 first-run default. The legacy Unsplash keyword option is retained for existing
