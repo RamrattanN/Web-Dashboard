@@ -109,7 +109,8 @@ Entries marked Backlog record future work only: export destination selection, re
 
 - Status: Implemented on the recovery branch and accepted by the owner on 2026-10-01 at `0c22c32` (ChatGPT icon shown after Refresh icon and after reload; other tile icons unchanged).
 - Reported: 2026-10-01.  The ChatGPT tile showed a grey letter instead of its icon.
-- Delivered: icons are requested without a CORS requirement, legacy `chat.openai.com` tiles use the `chatgpt.com` icon without changing the saved URL, placeholder images are skipped, and stale cached sources recover.  Details and evidence are in BASELINE.md.
+- Delivered: icons are requested without a CORS requirement, legacy `chat.openai.com` tiles use the `chatgpt.com` icon without changing the saved URL, undersized images are skipped, and stale cached sources recover.  Details and evidence are in BASELINE.md.
+- Corrected after acceptance on 2026-10-01: the minimum icon size was lowered from 32px to 16px so that real 16x16 favicons are kept.  Covered by CI; not separately checked by the owner.
 
 ### Wallpaper: Picsum daily
 

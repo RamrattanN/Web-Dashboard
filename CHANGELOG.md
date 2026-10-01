@@ -76,6 +76,12 @@
   or is blank is looked up again. Custom icons and the letter monogram are
   unchanged. The default ChatGPT tile for new profiles points to
   `https://chatgpt.com`.
+- Correction to the icon fix above: the minimum icon size is 16px, not 32px.
+  The 32px limit rejected legitimate 16x16 favicons, including ones already
+  cached, and sent them back through lookup. Only images smaller than 16px,
+  such as 1px blanks, are now skipped. This does not detect every "no icon"
+  placeholder a service may return: a 16px placeholder is shown like a real
+  16px favicon. Source order and the ChatGPT icon handling are unchanged.
 - New wallpaper mode **Picsum daily**: an online photo from picsum.photos
   chosen by a seed from the local calendar date, loaded as an ordinary image.
   A header **Change picture** button asks for a new seed. The seed of the

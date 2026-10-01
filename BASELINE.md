@@ -278,6 +278,23 @@ continues to the next source.
 | Official icon shown for a legacy tile with no CORS request and the saved URL unchanged; fallback to a service for `chatgpt.com`; placeholders skipped; monogram when nothing loads; custom icons untouched; Refresh icon and stale-cache recovery | CI (Linux Chromium) with every icon response supplied by the test | The dashboard's lookup logic. Nothing is fetched from the real services |
 | The ChatGPT icon appears after Refresh icon and survives a reload; other tile icons unchanged | Owner, normal Chrome on macOS, Dashboard Test profile, at `0c22c32`, reported passed on 2026-10-01 | The owner's real tile, cache and network. One targeted check, not a repeat of the earlier seven |
 
+### Correction after acceptance: minimum icon size 16px
+
+The fix accepted at `0c22c32` skipped images under 32px. An external review
+(Codex, of `c5d8db5`, using an isolated harness rather than a browser)
+showed that this rejects legitimate 16x16 favicons, including cached ones.
+The minimum is now 16px, so the statements above about "under 32px" and
+"placeholders skipped" are superseded: only undersized images such as 1px
+blanks are skipped, and a 16px "no icon" placeholder from a service is
+shown like any real 16px favicon. Source order, the `chat.openai.com`
+handling and the official ChatGPT icon source are unchanged.
+
+| Evidence | Source | What it does and does not show |
+| --- | --- | --- |
+| 32px minimum rejects real 16x16 favicons, including cached ones | Codex review, isolated harness | The defect. Not browser acceptance |
+| 16x16 and 32x32 icons display and are cached with no later fallback; cached icons at both sizes are reused with no rediscovery; 1px and failed sources advance to the next valid source; exhausted sources show the monogram; custom icons unchanged; ChatGPT icon tests still pass | CI (Linux Chromium) with decodable PNG fixtures of exact sizes supplied by the test | The dashboard's logic. Nothing is fetched from real icon services |
+| Effect on the owner's dashboard | Not separately checked by the owner | The owner's ChatGPT icon is 180px and is unaffected by the size limit |
+
 ## Picsum daily wallpaper — implemented, owner dashboard acceptance pending
 
 Added after the acceptances above; none of them covers it.

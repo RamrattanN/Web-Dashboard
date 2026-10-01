@@ -516,7 +516,9 @@
     const ICON_HOST_ALIASES = { 'chat.openai.com': 'chatgpt.com' };
     // First-party icon files tried before the generic locations.
     const KNOWN_ICONS = { 'chatgpt.com': ['https://cdn.oaistatic.com/assets/favicon-180x180-od45eci6.webp'] };
-    const MIN_ICON_SIZE = 32; // Smaller results are blank pixels or "no icon" placeholders; keep looking.
+    // Skips undersized images such as 1px blanks. It does not detect every placeholder a service may return:
+    // a 16px "no icon" image is indistinguishable here from a site's real 16px favicon, and is shown.
+    const MIN_ICON_SIZE = 16;
 
     function iconSourcesFor(u){
       const saved = domainFromUrl(u);

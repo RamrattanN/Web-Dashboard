@@ -475,12 +475,17 @@ async function icons(page, {links, cache, serve}) {
   return requests;
 }
 const shown = page => page.locator('#grid .card .favicon img').first();
-const loaded = async (page, src) => { await expect(shown(page)).toHaveAttribute('src', src); await expect.poll(() => shown(page).evaluate(el => el.complete && el.naturalWidth)).toBeGreaterThanOrEqual(32); };
+// The displayed icon must be the given source, fully decoded at the fixture's exact pixel size.
+const loaded = async (page, src, size, which = 0) => {
+  const img = page.locator('#grid .card .favicon img').nth(which);
+  await expect(img).toHaveAttribute('src', src);
+  await expect.poll(() => img.evaluate(el => el.complete ? el.naturalWidth : -1)).toBe(size);
+};
 const iconCache = page => page.evaluate(() => JSON.parse(localStorage.getItem('startpage.iconcache.v1') || '{}'));
 
 test('legacy chat.openai.com tile shows the official ChatGPT icon without CORS and keeps its saved URL', async ({page}) => {
   const requests = await icons(page, {links: [legacyChat], serve: [[OFFICIAL, 180]]});
-  await loaded(page, OFFICIAL);
+  await loaded(page, OFFICIAL, 180);
   expect(await shown(page).evaluate(el => el.crossOrigin)).toBeNull();
   const official = requests.filter(request => request.url === OFFICIAL);
   expect(official).toHaveLength(1); expect(official[0].origin).toBeUndefined(); // a CORS request would carry an Origin header
@@ -488,22 +493,22 @@ test('legacy chat.openai.com tile shows the official ChatGPT icon without CORS a
   await expect(page.locator('#grid .card').first()).toHaveAttribute('data-url', 'https://chat.openai.com');
   expect(await iconCache(page)).toEqual({'chat.openai.com': OFFICIAL});
   await page.reload();
-  await loaded(page, OFFICIAL);
+  await loaded(page, OFFICIAL, 180);
   expect(await saved(page)).toEqual([legacyChat]);
 });
 
-test('icon lookup falls back to a service for the current host, skips placeholders, and ends on the monogram', async ({page}) => {
+test('icon lookup falls back to a service for the current host, skips 1px images, and ends on the monogram', async ({page}) => {
   // Official file and chatgpt.com paths unavailable: the service is asked for chatgpt.com, not the legacy host.
   const google = 'https://www.google.com/s2/favicons?domain=chatgpt.com&sz=128';
   let requests = await icons(page, {links: [legacyChat], serve: [[/google\.com\/s2\/favicons\?domain=chatgpt\.com&/, 128]]});
-  await loaded(page, google);
+  await loaded(page, google, 128);
   // Playwright drops every favicon.ico request without reporting it, so that path never appears in these lists.
   expect(requests.map(request => request.url).slice(0, 3)).toEqual([OFFICIAL, 'https://chatgpt.com/favicon-32x32.png', 'https://chatgpt.com/favicon-64x64.png']);
   expect(requests.some(request => /clearbit|faviconkit|chat\.openai\.com/.test(request.url))).toBe(false);
   expect(requests.every(request => request.origin === undefined)).toBe(true);
-  // A 16px "no icon" image and a 1px blank are rejected; with nothing better, the letter monogram is shown and nothing is cached.
+  // Every source either fails or returns a 1px blank: the letter monogram is shown and nothing is cached.
   await page.unrouteAll();
-  requests = await icons(page, {links: [legacyChat], serve: [[/google\.com\/s2\/favicons/, 16], [/^https:\/\/icon\.horse\//, 1]]});
+  requests = await icons(page, {links: [legacyChat], serve: [[/google\.com\/s2\/favicons/, 1], [/^https:\/\/icon\.horse\//, 1]]});
   await expect(page.locator('#grid .card .tile-letter')).toHaveText('C');
   await expect(page.locator('#grid .card .favicon img')).toHaveCount(0);
   expect(requests.at(-1).url).toBe('https://icon.horse/icon/chatgpt.com');
@@ -511,7 +516,7 @@ test('icon lookup falls back to a service for the current host, skips placeholde
   // Other sites use their own host, and a custom icon is used as saved with no lookup at all.
   await page.unrouteAll();
   requests = await icons(page, {links: [{url: 'https://example.com/page', title: 'Example', icon: ''}, {url: 'https://chat.openai.com', title: 'Custom', icon: pixel}], serve: [['https://example.com/apple-touch-icon.png', 48]]});
-  await loaded(page, 'https://example.com/apple-touch-icon.png');
+  await loaded(page, 'https://example.com/apple-touch-icon.png', 48);
   await expect(page.locator('#grid .card .favicon img').nth(1)).toHaveAttribute('src', pixel);
   expect(requests.map(request => request.url)).toEqual(['32x32.png', '64x64.png', '96x96.png'].map(name => 'https://example.com/favicon-' + name).concat('https://example.com/apple-touch-icon.png'));
   expect(await iconCache(page)).toEqual({'example.com': 'https://example.com/apple-touch-icon.png'});
@@ -520,22 +525,22 @@ test('icon lookup falls back to a service for the current host, skips placeholde
 test('Refresh icon replaces a stale cached source; a cached source that fails or is blank is looked up again', async ({page}) => {
   // The generic letter image that used to be cached for this tile still loads, so only Refresh replaces it.
   await icons(page, {links: [legacyChat], cache: {'chat.openai.com': HORSE}, serve: [[HORSE, 256], [OFFICIAL, 180]]});
-  await loaded(page, HORSE);
+  await loaded(page, HORSE, 256);
   await page.locator('#grid .icon-btn').first().click();
   await page.getByRole('button', {name: 'Refresh icon', exact: true}).first().click();
-  await loaded(page, OFFICIAL);
+  await loaded(page, OFFICIAL, 180);
   expect(await iconCache(page)).toEqual({'chat.openai.com': OFFICIAL});
   await page.reload();
-  await loaded(page, OFFICIAL);
+  await loaded(page, OFFICIAL, 180);
   // Cached source no longer loads.
   await page.unrouteAll();
   await icons(page, {links: [legacyChat], cache: {'chat.openai.com': 'https://gone.example/icon.png'}, serve: [[OFFICIAL, 180]]});
-  await loaded(page, OFFICIAL);
+  await loaded(page, OFFICIAL, 180);
   expect(await iconCache(page)).toEqual({'chat.openai.com': OFFICIAL});
   // Cached source now returns a blank pixel.
   await page.unrouteAll();
   await icons(page, {links: [legacyChat], cache: {'chat.openai.com': 'https://api.faviconkit.com/chat.openai.com/128'}, serve: [[/^https:\/\/api\.faviconkit\.com\//, 1], [OFFICIAL, 180]]});
-  await loaded(page, OFFICIAL);
+  await loaded(page, OFFICIAL, 180);
   expect(await iconCache(page)).toEqual({'chat.openai.com': OFFICIAL});
 });
 
@@ -788,4 +793,58 @@ test('backups keep the Picsum selection; older backups and invalid Picsum fields
   await page.locator('#importFile').setInputFiles({name: 'odd.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({links: links.slice(0, 3), settings: {mode: 'picsum', picsumSeed: '../../evil?x=1', picsumDate: '2026-10-05'}}))});
   await picsumShown(page, 'daily-2026-10-05');
   expect(net.seeds.some(seed => seed.includes('evil'))).toBe(false);
+});
+
+const site = {url: 'https://example.com/page', title: 'Example', group: 'Work', desc: '', icon: ''};
+const sitePath = name => 'https://example.com/' + name;
+for (const size of [16, 32]) test(`a ${size}x${size} icon is displayed and cached, with no later fallback or rediscovery`, async ({page}) => {
+  // Found through lookup: the first path that answers is kept and nothing after it is tried.
+  let requests = await icons(page, {links: [site], serve: [[sitePath('favicon-32x32.png'), size]]});
+  await loaded(page, sitePath('favicon-32x32.png'), size);
+  await expect(page.locator('#grid .card .tile-letter')).toHaveCount(0);
+  expect(await iconCache(page)).toEqual({'example.com': sitePath('favicon-32x32.png')});
+  expect(requests.map(request => request.url)).toEqual([sitePath('favicon-32x32.png')]);
+  // Reload: shown straight from the cached source, with no other source requested.
+  requests.length = 0;
+  await page.reload();
+  await loaded(page, sitePath('favicon-32x32.png'), size);
+  expect([...new Set(requests.map(request => request.url))]).toEqual([sitePath('favicon-32x32.png')]);
+  expect(await iconCache(page)).toEqual({'example.com': sitePath('favicon-32x32.png')});
+  // A source cached by an earlier version stays in use at this size.
+  await page.unrouteAll();
+  const cached = 'https://icons.example.net/cached.png';
+  requests = await icons(page, {links: [site], cache: {'example.com': cached}, serve: [[cached, size], [sitePath('favicon-32x32.png'), 64]]});
+  await loaded(page, cached, size);
+  expect([...new Set(requests.map(request => request.url))]).toEqual([cached]);
+  expect(await iconCache(page)).toEqual({'example.com': cached});
+});
+
+test('1px and failed icon sources advance to the next valid source; exhausted sources show the monogram; custom icons are untouched', async ({page}) => {
+  // 1px blank, then a failed request, then a real 16px icon.
+  let requests = await icons(page, {links: [site], serve: [[sitePath('favicon-32x32.png'), 1], [sitePath('favicon-96x96.png'), 16]]});
+  await loaded(page, sitePath('favicon-96x96.png'), 16);
+  expect(requests.map(request => request.url)).toEqual(['32x32', '64x64', '96x96'].map(name => sitePath(`favicon-${name}.png`)));
+  expect(await iconCache(page)).toEqual({'example.com': sitePath('favicon-96x96.png')});
+  // A cached source that has become a 1px blank is replaced by the next valid source.
+  await page.unrouteAll();
+  const cached = 'https://icons.example.net/cached.png';
+  await icons(page, {links: [site], cache: {'example.com': cached}, serve: [[cached, 1], [sitePath('apple-touch-icon.png'), 32]]});
+  await loaded(page, sitePath('apple-touch-icon.png'), 32);
+  expect(await iconCache(page)).toEqual({'example.com': sitePath('apple-touch-icon.png')});
+  // Nothing usable anywhere: the letter monogram, and nothing cached.
+  await page.unrouteAll();
+  requests = await icons(page, {links: [site], serve: [[sitePath('favicon-64x64.png'), 1], [/^https:\/\/icons\.duckduckgo\.com\//, 1]]});
+  await expect(page.locator('#grid .card .tile-letter')).toHaveText('E');
+  await expect(page.locator('#grid .card .favicon img')).toHaveCount(0);
+  expect(requests.at(-1).url).toBe('https://icon.horse/icon/example.com');
+  expect(await iconCache(page)).toEqual({});
+  // Custom icons, including a 1px one, are shown as saved with no lookup and no cache entry.
+  await page.unrouteAll();
+  const custom = 'https://cdn.example.org/my-icon.png';
+  requests = await icons(page, {links: [{...site, icon: pixel}, {...site, url: 'https://example.org/', icon: custom}], serve: [[custom, 16]]});
+  await expect(page.locator('#grid .card .favicon img').first()).toHaveAttribute('src', pixel);
+  await loaded(page, custom, 16, 1);
+  expect(requests.map(request => request.url)).toEqual([custom]);
+  expect(await iconCache(page)).toEqual({});
+  await expect(page.locator('#grid .card .tile-letter')).toHaveCount(0);
 });
