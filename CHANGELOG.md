@@ -91,6 +91,10 @@
   picture or another mode. Other wallpaper modes are unchanged and Bing
   daily stays disabled. Accepted by the owner on the real dashboard at
   `fd8b37e` (Chrome on macOS, `file://`).
+- Settings layout: paired fields now keep their controls level when one
+  label wraps, which fixes the wallpaper value input sitting lower than the
+  solid colour input. Fields still stack on narrow screens. Visually accepted
+  by the owner at `814a2cd` (Chrome on macOS), separately from Picsum.
 - Owner visual acceptance of the refresh, the All button and the Duck.ai row
   was given on 2026-10-01 at `327ff8c` (Chrome on macOS). The ChatGPT icon
   fix was accepted by the owner at `0c22c32`.

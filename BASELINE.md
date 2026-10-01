@@ -344,3 +344,20 @@ checked by the owner: the change of photo on a new calendar day (covered by
 CI with a fixed clock only), a page served over `http`, and Safari, Windows
 and touch devices. The 16px icon-size correction in the same head was not
 separately checked by the owner.
+
+## Settings field alignment — accepted by the owner at `814a2cd`
+
+Reported by the owner after the Picsum acceptance and recorded separately
+from it: in the Wallpaper group the "Image URL, keyword, or Bing market"
+label wrapped to two lines and pushed its input out of line with the
+adjacent "Solid color" input.
+
+Change (`814a2cd`): side-by-side fields share a baseline, so a label that
+wraps grows upwards and the paired controls stay level. Fields still stack
+on narrow screens. No control or behaviour changed.
+
+| Evidence | Source | What it does and does not show |
+| --- | --- | --- |
+| For all six paired fields in Settings: control tops and bottoms level at desktop width with the wallpaper label wrapping to two lines, no label clipped, fields stacked at phone width | CI assertion (Linux Chromium) | Layout arithmetic in that browser and font |
+| Desktop and phone screenshots of the Wallpaper group | Agent inspection of the CI screenshots | Linux Chromium rendering, not the owner's Mac |
+| The alignment adjustment looks correct | Owner, Chrome on macOS, Dashboard Test profile, at `814a2cd`, 2026-10-01 | A visual confirmation of the adjustment as a whole. The owner did not report results for individual checklist steps |
