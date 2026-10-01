@@ -65,6 +65,19 @@
   pasting, keeps the typed text, reports clipboard and blocked-tab failures,
   and offers a plain Open Duck.ai link. The Perplexity companion button is
   removed from this row; Google, Bing and Perplexity routing is unchanged.
+- Fix: tile icons were requested with an anonymous CORS requirement although
+  they are only displayed. That discarded icons from the site itself and from
+  Google's and DuckDuckGo's icon services, leaving one service whose answer
+  for `chat.openai.com` is a generated grey letter. Icons are now requested
+  without CORS. Legacy `chat.openai.com` tiles look up the icon for
+  `chatgpt.com`, starting with OpenAI's own icon file, and keep their saved
+  URL. Images under 32px (blank pixels and "no icon" placeholders) are
+  skipped, two dead icon services are removed, and a cached source that fails
+  or is blank is looked up again. Custom icons and the letter monogram are
+  unchanged. The default ChatGPT tile for new profiles points to
+  `https://chatgpt.com`.
+- Owner visual acceptance of the refresh, the All button and the Duck.ai row
+  was given on 2026-10-01 at `327ff8c` (Chrome on macOS).
 
 ## v1.4.7 — 2025-10-13
 ### Added

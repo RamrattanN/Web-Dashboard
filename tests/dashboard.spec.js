@@ -450,3 +450,90 @@ for (const origin of ['file', 'http']) test(`Duck.ai prompt reaches the real cli
   await target.click(); await page.keyboard.press('ControlOrMeta+V');
   await expect(target).toHaveValue(`real clipboard from ${origin}`);
 });
+
+// Icon lookup. Every response here is supplied by the test; nothing is fetched from the real services.
+const zlib = require('node:zlib');
+function png(size) {
+  const crc = buf => { let c = ~0; for (const b of buf) { c ^= b; for (let k = 0; k < 8; k++) c = c & 1 ? (c >>> 1) ^ 0xEDB88320 : c >>> 1; } return ~c >>> 0; };
+  const chunk = (type, data) => { const body = Buffer.concat([Buffer.from(type), data]); const out = Buffer.alloc(body.length + 8); out.writeUInt32BE(data.length, 0); body.copy(out, 4); out.writeUInt32BE(crc(body), body.length + 4); return out; };
+  const header = Buffer.alloc(13); header.writeUInt32BE(size, 0); header.writeUInt32BE(size, 4); header[8] = 8; header[9] = 0; // 8-bit greyscale
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', header), chunk('IDAT', zlib.deflateSync(Buffer.alloc((size + 1) * size, 0x80))), chunk('IEND', Buffer.alloc(0))]);
+}
+const OFFICIAL = 'https://cdn.oaistatic.com/assets/favicon-180x180-od45eci6.webp';
+const HORSE = 'https://icon.horse/icon/chat.openai.com';
+const legacyChat = {url: 'https://chat.openai.com', title: 'ChatGPT', group: 'Work', desc: '', icon: ''};
+async function icons(page, {links, cache, serve}) {
+  await setup(page);
+  const requests = []; page.on('request', request => { if (request.resourceType() === 'image') requests.push({url: request.url(), origin: request.headers().origin}); });
+  // Responses carry no Access-Control-Allow-Origin header, as the real icon services do not.
+  for (const [pattern, size] of serve) await page.route(pattern, route => route.fulfill({contentType: 'image/png', body: png(size)}));
+  await page.evaluate(({links, cache}) => {
+    setLinks(links);
+    if (cache) localStorage.setItem('startpage.iconcache.v1', JSON.stringify(cache)); else localStorage.removeItem('startpage.iconcache.v1');
+  }, {links, cache});
+  await page.reload();
+  return requests;
+}
+const shown = page => page.locator('#grid .card .favicon img').first();
+const loaded = async (page, src) => { await expect(shown(page)).toHaveAttribute('src', src); await expect.poll(() => shown(page).evaluate(el => el.complete && el.naturalWidth)).toBeGreaterThanOrEqual(32); };
+const iconCache = page => page.evaluate(() => JSON.parse(localStorage.getItem('startpage.iconcache.v1') || '{}'));
+
+test('legacy chat.openai.com tile shows the official ChatGPT icon without CORS and keeps its saved URL', async ({page}) => {
+  const requests = await icons(page, {links: [legacyChat], serve: [[OFFICIAL, 180]]});
+  await loaded(page, OFFICIAL);
+  expect(await shown(page).evaluate(el => el.crossOrigin)).toBeNull();
+  const official = requests.filter(request => request.url === OFFICIAL);
+  expect(official).toHaveLength(1); expect(official[0].origin).toBeUndefined(); // a CORS request would carry an Origin header
+  expect(await saved(page)).toEqual([legacyChat]);
+  await expect(page.locator('#grid .card').first()).toHaveAttribute('data-url', 'https://chat.openai.com');
+  expect(await iconCache(page)).toEqual({'chat.openai.com': OFFICIAL});
+  await page.reload();
+  await loaded(page, OFFICIAL);
+  expect(await saved(page)).toEqual([legacyChat]);
+});
+
+test('icon lookup falls back to a service for the current host, skips placeholders, and ends on the monogram', async ({page}) => {
+  // Official file and chatgpt.com paths unavailable: the service is asked for chatgpt.com, not the legacy host.
+  const google = 'https://www.google.com/s2/favicons?domain=chatgpt.com&sz=128';
+  let requests = await icons(page, {links: [legacyChat], serve: [[/google\.com\/s2\/favicons\?domain=chatgpt\.com&/, 128]]});
+  await loaded(page, google);
+  expect(requests.map(request => request.url).slice(0, 3)).toEqual([OFFICIAL, 'https://chatgpt.com/favicon.ico', 'https://chatgpt.com/favicon-32x32.png']);
+  expect(requests.some(request => /clearbit|faviconkit|chat\.openai\.com/.test(request.url))).toBe(false);
+  expect(requests.every(request => request.origin === undefined)).toBe(true);
+  // A 16px "no icon" image and a 1px blank are rejected; with nothing better, the letter monogram is shown and nothing is cached.
+  await page.unrouteAll();
+  requests = await icons(page, {links: [legacyChat], serve: [[/google\.com\/s2\/favicons/, 16], [/^https:\/\/icon\.horse\//, 1]]});
+  await expect(page.locator('#grid .card .tile-letter')).toHaveText('C');
+  await expect(page.locator('#grid .card .favicon img')).toHaveCount(0);
+  expect(requests.at(-1).url).toBe('https://icon.horse/icon/chatgpt.com');
+  expect(await iconCache(page)).toEqual({});
+  // Other sites use their own host, and a custom icon is used as saved with no lookup at all.
+  await page.unrouteAll();
+  requests = await icons(page, {links: [{url: 'https://example.com/page', title: 'Example', icon: ''}, {url: 'https://chat.openai.com', title: 'Custom', icon: pixel}], serve: [['https://example.com/favicon.ico', 48]]});
+  await loaded(page, 'https://example.com/favicon.ico');
+  await expect(page.locator('#grid .card .favicon img').nth(1)).toHaveAttribute('src', pixel);
+  expect(requests.map(request => request.url)).toEqual(['https://example.com/favicon.ico']);
+  expect(await iconCache(page)).toEqual({'example.com': 'https://example.com/favicon.ico'});
+});
+
+test('Refresh icon replaces a stale cached source; a cached source that fails or is blank is looked up again', async ({page}) => {
+  // The generic letter image that used to be cached for this tile still loads, so only Refresh replaces it.
+  await icons(page, {links: [legacyChat], cache: {'chat.openai.com': HORSE}, serve: [[HORSE, 256], [OFFICIAL, 180]]});
+  await loaded(page, HORSE);
+  await page.locator('#grid .icon-btn').first().click();
+  await page.getByRole('button', {name: 'Refresh icon', exact: true}).first().click();
+  await loaded(page, OFFICIAL);
+  expect(await iconCache(page)).toEqual({'chat.openai.com': OFFICIAL});
+  await page.reload();
+  await loaded(page, OFFICIAL);
+  // Cached source no longer loads.
+  await page.unrouteAll();
+  await icons(page, {links: [legacyChat], cache: {'chat.openai.com': 'https://gone.example/icon.png'}, serve: [[OFFICIAL, 180]]});
+  await loaded(page, OFFICIAL);
+  expect(await iconCache(page)).toEqual({'chat.openai.com': OFFICIAL});
+  // Cached source now returns a blank pixel.
+  await page.unrouteAll();
+  await icons(page, {links: [legacyChat], cache: {'chat.openai.com': 'https://api.faviconkit.com/chat.openai.com/128'}, serve: [[/^https:\/\/api\.faviconkit\.com\//, 1], [OFFICIAL, 180]]});
+  await loaded(page, OFFICIAL);
+  expect(await iconCache(page)).toEqual({'chat.openai.com': OFFICIAL});
+});

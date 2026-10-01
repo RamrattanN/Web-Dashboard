@@ -503,32 +503,49 @@
     function domainFromUrl(u){ try { return new URL(u).hostname; } catch { return ''; } }
     function originFromUrl(u){ try { const x = new URL(u); return x.origin; } catch { return ''; } }
 
+    // Icons are only displayed, never read through canvas, so they are requested without CORS.
+    // Hosts that moved keep their saved URL; only the icon lookup uses the current host.
+    const ICON_HOST_ALIASES = { 'chat.openai.com': 'chatgpt.com' };
+    // First-party icon files tried before the generic locations.
+    const KNOWN_ICONS = { 'chatgpt.com': ['https://cdn.oaistatic.com/assets/favicon-180x180-od45eci6.webp'] };
+    const MIN_ICON_SIZE = 32; // Smaller results are blank pixels or "no icon" placeholders; keep looking.
+
     function iconSourcesFor(u){
-      const host = domainFromUrl(u);
-      const origin = originFromUrl(u);
+      const saved = domainFromUrl(u);
+      const host = ICON_HOST_ALIASES[saved] || saved;
+      const origin = host === saved ? originFromUrl(u) : `https://${host}`;
       const paths = [`${origin}/favicon.ico`, `${origin}/favicon-32x32.png`, `${origin}/favicon-64x64.png`, `${origin}/favicon-96x96.png`, `${origin}/apple-touch-icon.png`, `${origin}/apple-touch-icon-precomposed.png`];
-      const services = [`https://www.google.com/s2/favicons?domain=${host}&sz=128`, `https://icons.duckduckgo.com/ip3/${host}.ico`, `https://logo.clearbit.com/${host}`, `https://api.faviconkit.com/${host}/128`, `https://icon.horse/icon/${host}`];
-      return [...paths, ...services];
+      const services = [`https://www.google.com/s2/favicons?domain=${host}&sz=128`, `https://icons.duckduckgo.com/ip3/${host}.ico`, `https://icon.horse/icon/${host}`];
+      return [...(KNOWN_ICONS[host] || []), ...paths, ...services];
     }
 
     function resolveIcon(u, imgEl, onFail){
       const host = domainFromUrl(u);
       const cache = getIconCache();
+      const tooSmall = () => imgEl.naturalWidth > 0 && imgEl.naturalWidth < MIN_ICON_SIZE;
+      imgEl.referrerPolicy = 'no-referrer';
       if (cache[host]){
-        imgEl.referrerPolicy = 'no-referrer';
+        // A cached source that no longer loads, or is only a placeholder, is dropped and looked up again.
+        const stale = () => { const c = getIconCache(); delete c[host]; setIconCache(c); chain(); };
+        imgEl.onload = () => { if (tooSmall()) stale(); };
+        imgEl.onerror = stale;
         imgEl.src = cache[host];
-        imgEl.onerror = () => { delete cache[host]; setIconCache(cache); chain(); };
         return;
       }
       chain();
       function chain(){
         const candidates = iconSourcesFor(u);
         let i = 0;
-        imgEl.referrerPolicy = 'no-referrer';
-        imgEl.crossOrigin = 'anonymous';
-        imgEl.onload = () => { const c = getIconCache(); c[host] = imgEl.currentSrc || imgEl.src; setIconCache(c); };
-        imgEl.onerror = function next(){ if (i >= candidates.length){ if (onFail) onFail(); return; } imgEl.src = candidates[i++]; };
-        imgEl.src = candidates[i++];
+        const next = () => {
+          if (i >= candidates.length){ imgEl.onload = imgEl.onerror = null; if (onFail) onFail(); return; }
+          imgEl.src = candidates[i++];
+        };
+        imgEl.onload = () => {
+          if (tooSmall()) return next();
+          const c = getIconCache(); c[host] = imgEl.currentSrc || imgEl.src; setIconCache(c);
+        };
+        imgEl.onerror = next;
+        next();
       }
     }
 
@@ -1058,7 +1075,7 @@
         { url: 'https://mail.google.com', title: 'Gmail', desc: 'Mail', group: 'Work' },
         { url: 'https://www.facebook.com', title: 'Facebook', desc: 'Social', group: 'General' },
         { url: 'https://www.linkedin.com', title: 'LinkedIn', desc: 'Professional', group: 'Work' },
-        { url: 'https://chat.openai.com', title: 'ChatGPT', desc: 'Assistant', group: 'Work' }
+        { url: 'https://chatgpt.com', title: 'ChatGPT', desc: 'Assistant', group: 'Work' }
       ]);
     }
 

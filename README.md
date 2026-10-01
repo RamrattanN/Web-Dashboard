@@ -12,7 +12,7 @@ There is no build step or package installation.  See the [Wiki](https://github.c
 
 ## Network and privacy
 
-The visual refresh uses Arial/Helvetica system fonts and embedded application assets, without Google Fonts or a runtime dependency on Ramrattan Rentals.  The page may request favicons from saved sites or external favicon services.  Search, remote wallpaper, and opening a tile contact the selected providers or sites.  Review the URLs and browser requests if you need an offline setup.  Browser settings and dashboard data are stored locally in your browser.
+The visual refresh uses Arial/Helvetica system fonts and embedded application assets, without Google Fonts or a runtime dependency on Ramrattan Rentals.  Tile icons are requested from the saved site itself and then from Google, DuckDuckGo and icon.horse icon services (for ChatGPT, OpenAI's own icon file first); a custom icon URL on a tile is used instead of any lookup.  Search, remote wallpaper, and opening a tile contact the selected providers or sites.  Review the URLs and browser requests if you need an offline setup.  Browser settings and dashboard data are stored locally in your browser.
 
 ## Group filters and search
 
@@ -80,7 +80,7 @@ Bing diagnostic reports whether the provider loaded or the fallback remained:
 LIVE_BING=1 npx playwright test --grep 'live Bing browser probe'
 ```
 
-Functional acceptance was completed on 2026-10-01 for Chrome on macOS using the local `file://` dashboard, with complementary Linux Chromium CI coverage.  That record applies to the functional version at `443a334`; the subsequent visual refresh still requires owner visual acceptance.  Safari, Windows and real touch devices are not accepted platforms yet.
+Functional acceptance was completed on 2026-10-01 for Chrome on macOS using the local `file://` dashboard, with complementary Linux Chromium CI coverage.  That record applies to the functional version at `443a334`.  The visual refresh, the All group button and the Duck.ai row were visually accepted by the owner at `327ff8c`; a later tile-icon fix still awaits one owner check.  Safari, Windows and real touch devices are not accepted platforms yet.
 
 See [DESIGN_BASELINE.md](DESIGN_BASELINE.md) for the Ramrattan Rentals visual specification.  See [BASELINE.md](BASELINE.md) for recovery provenance, the evidence sources and verification limits, and a repeatable Mac checklist with a 16-link fixture. See
 [CHANGELOG.md](CHANGELOG.md) for changes and [SECURITY.md](SECURITY.md) for

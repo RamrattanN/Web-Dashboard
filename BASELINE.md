@@ -109,12 +109,14 @@ prompt transfer through DuckDuckGo's `!ai` route was tested by the owner and
 The steps below are the original checklist, kept for repeating acceptance in
 another browser.
 
-## Visual refresh — implemented, owner acceptance pending
+## Visual refresh — accepted by the owner at `327ff8c`
 
 The Ramrattan Rentals design in [DESIGN_BASELINE.md](DESIGN_BASELINE.md) was
 applied after the functional acceptance above. The functional record above
 describes `443a334` and is unchanged; it was not repeated by hand on the
-restyled page. **Visual acceptance by the owner has not been given.**
+restyled page. Visual acceptance was given by the owner on 2026-10-01; see
+"Owner visual acceptance" below. The evidence table in this section records
+what was known before that acceptance.
 
 What changed is presentation only: header, tiles, menus, dialogs, icons,
 fonts and colours. The script changes are limited to icon markup, accessible
@@ -138,12 +140,9 @@ Evidence, by source:
 | Appearance of the header, tiles, hover and menu, selected filter, focus rings, tooltips and both dialogs | Agent inspection of the CI screenshots | Linux Chromium with Liberation Sans standing in for Arial, a synthetic wallpaper, and letter monograms instead of real favicons. Not the owner's Mac, wallpaper or fonts |
 | Tooltip positioning, stacking of the tile menu, reduced-motion rule, narrow-width rules | Code review, partly confirmed by the screenshots | |
 
-The owner has viewed the refreshed dashboard in Chrome on macOS but has not
-given formal visual acceptance. Not yet confirmed by the owner: native
-controls (colour picker, file chooser, select menus), drag appearance with a
-real pointer, narrow-window layout, and Safari.
+Safari was not checked by anyone.
 
-## Group filter and Duck.ai row — implemented, owner check pending
+## Group filter and Duck.ai row — accepted by the owner at `327ff8c`
 
 Added after the visual refresh, at the owner's request.
 
@@ -164,7 +163,7 @@ Added after the visual refresh, at the owner's request.
 | Work to All, News to All and General to All, each with reload; second-click toggle; tile limit; filtered drag keeps every link; stale filter cleared by All | CI (Linux Chromium) | Behaviour under automation |
 | Copy, open, empty prompt, blocked tab and clipboard-failure messages; typed text kept; other providers' routing unchanged; no request made to Duck.ai or DuckDuckGo | CI with the clipboard and `window.open` replaced | The dashboard's own logic. Says nothing about Duck.ai |
 | The prompt reaches the real clipboard and can be pasted, from a `file://` page and from a page served over plain `http` | CI (Linux Chromium, real clipboard, `window.open` replaced) | Copying works in Chromium in both contexts. Not macOS, not Safari |
-| Duck.ai opens in a new tab and accepts the pasted prompt | **Not verified by anyone** | Needs the owner's Mac check |
+| Duck.ai opens in a new tab and accepts the pasted prompt | Owner, Chrome on macOS, at `327ff8c` | Recorded under "Owner visual acceptance" below |
 
 Known limits: Duck.ai may show a welcome or terms screen before a paste is
 possible; a browser may refuse clipboard access or block the new tab, in
@@ -222,3 +221,59 @@ a manual step.
     ```
     Repeat steps 2–9 in Safari if Safari support is required. Report browser
     version and results before treating that browser as accepted.
+
+## Owner visual acceptance — 2026-10-01, at `327ff8c`
+
+Nilesh Ramrattan checked the following by hand in normal Chrome on macOS, in
+the Dashboard Test profile, with the dashboard opened from `file://`, and
+reported all seven as passed:
+
+1. Header and wallpaper: navy bar, shield, title, four header buttons,
+   wallpaper visible behind the tiles, readable tip line.
+2. Group bar: All highlighted on load; General, News and Work each filter and
+   return through All; a selected group persists across reload; a second
+   click returns to All; filtered dragging leaves other tiles in place.
+3. Duck.ai row: Copy & open copies the prompt and opens Duck.ai, the prompt
+   pastes there, the typed text stays in the box, Open Duck.ai opens an empty
+   chat, and an empty box opens nothing.
+4. Tiles: hover state, menu items readable, drag appearance.
+5. Tooltips and keyboard focus rings.
+6. Settings: three groups, scrolling body, pinned Close and Save, native
+   controls acceptable.
+7. Narrow window: header wraps, search boxes stack, no sideways scrolling.
+
+This acceptance covers `327ff8c`. It does not cover the icon fix below, which
+came afterwards, or Safari, Windows and touch devices.
+
+## Tile icon fix — implemented after acceptance, owner check pending
+
+Reported by the owner: the ChatGPT tile showed a grey letter instead of its
+icon. Cause, established by requesting each icon source directly:
+
+- Icons were requested with `crossOrigin = 'anonymous'` although they are
+  only displayed. Google's and DuckDuckGo's icon services hold the ChatGPT
+  icon but send no `Access-Control-Allow-Origin` header, so those responses
+  were discarded, as were sites' own icon files.
+- `chat.openai.com` redirects to `chatgpt.com`.
+- The one service that passed CORS returns a generated grey letter for
+  `chat.openai.com`, and that result was cached.
+- Two other listed services were dead: one no longer resolves, one answers
+  with a 1x1 blank image.
+
+The owner's saved tile and icon cache could not be read by the agent; the
+default tile (`https://chat.openai.com`, no custom icon) matches the symptom.
+
+Change: icons are requested without CORS; `chat.openai.com` looks up the icon
+for `chatgpt.com` without changing the saved URL; OpenAI's own icon file
+(`cdn.oaistatic.com`, confirmed to return the ChatGPT icon on 2026-10-01) is
+tried first, then the site's paths, then Google, DuckDuckGo and icon.horse;
+images under 32px are skipped; a cached source that fails or is blank is
+looked up again; Refresh icon replaces a cached source that still loads.
+The OpenAI file name contains a build hash and may change; the lookup then
+continues to the next source.
+
+| Evidence | Source | What it does and does not show |
+| --- | --- | --- |
+| Which real sources hold the ChatGPT icon and which headers they send | Agent requests with curl, and viewing the returned images | The real services' answers on 2026-10-01. Not a browser |
+| Official icon shown for a legacy tile with no CORS request and the saved URL unchanged; fallback to a service for `chatgpt.com`; placeholders skipped; monogram when nothing loads; custom icons untouched; Refresh icon and stale-cache recovery | CI (Linux Chromium) with every icon response supplied by the test | The dashboard's lookup logic. Nothing is fetched from the real services |
+| The ChatGPT icon appears after Refresh icon and survives a reload | **Pending owner check** | |

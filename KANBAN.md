@@ -18,7 +18,7 @@
 
 ### Settings: group options logically
 
-- Status: Partly implemented in the visual refresh on 2026-10-01; owner visual acceptance pending.  Settings are grouped into Dashboard, Layout and Wallpaper, as authorised for that work.  Still in Backlog: showing or enabling mode-specific wallpaper controls only where relevant, which would change behaviour.
+- Status: Partly implemented in the visual refresh on 2026-10-01 and accepted by the owner at `327ff8c`.  Settings are grouped into Dashboard, Layout and Wallpaper, as authorised for that work.  Still in Backlog: showing or enabling mode-specific wallpaper controls only where relevant, which would change behaviour.
 - Requested: 2026-10-01 during manual Mac acceptance.
 - User need: Make Settings easier to navigate by grouping related controls under clear section headings.
 - Suggested groups: Layout and tiles; Wallpaper and appearance; Search and AI; Backup and data.
@@ -76,7 +76,7 @@
 
 ### Visual refresh: adopt the Ramrattan Rentals design baseline
 
-- Status: Implemented on the recovery branch on 2026-10-01; **owner visual acceptance pending**.  CI passes, and the validation evidence and its limits are recorded in BASELINE.md.  Not merged or released.
+- Status: Implemented on the recovery branch and visually accepted by the owner on 2026-10-01 at `327ff8c` (Chrome on macOS).  Evidence and limits are recorded in BASELINE.md.  Not merged or released.
 - Requested: 2026-10-01.
 - User direction: Finish the existing Claude workload first.  Prepare the cosmetic implementation work order later.
 - Specification: [DESIGN_BASELINE.md](DESIGN_BASELINE.md), containing the pinned Rentals source reference, exact palette, typography, icon style, brand asset, surfaces, controls, and verification requirements.
@@ -95,12 +95,18 @@
 - Bing daily wallpaper: disabled in Settings until a real Bing image is shown to load in a browser.  Bing blocks the request by CORS; re-enabling needs a verified approach and a separate decision on any proxy or backend.
 - Group filter with no matching group (review finding F5): after an import, or after removing or editing the last tile in the active group, the grid is empty.  The All button added on 2026-10-01 now clears such a filter in one click.  Still in Backlog: falling back to All automatically.
 - Import of hand-edited backups (review finding F6): numeric settings written as strings, such as `"maxTiles": "3"`, are rejected.  Backups written by the dashboard are unaffected.  Any change must keep validation strict rather than loosen it.
-- Duck.ai search panel: delivered on 2026-10-01 as a copy-and-open flow (the prompt is copied and Duck.ai opened for pasting), pending the owner's Mac check.  Still in Backlog: passing the prompt to Duck.ai directly, only once an approach is verified in a browser.  DuckDuckGo's `!ai` route failed this on 2026-10-01 in Chrome on macOS (`https://duckduckgo.com/?q=%21ai+dashboard+prompt+test+12345` opened ordinary search results) and must not be used; DuckDuckGo search parameters also do not carry over (`duckduckgo.com/chat?q=…` redirects to `duck.ai/chat` without the text).
+- Duck.ai search panel: delivered on 2026-10-01 as a copy-and-open flow (the prompt is copied and Duck.ai opened for pasting) and accepted by the owner at `327ff8c`.  Still in Backlog: passing the prompt to Duck.ai directly, only once an approach is verified in a browser.  DuckDuckGo's `!ai` route failed this on 2026-10-01 in Chrome on macOS (`https://duckduckgo.com/?q=%21ai+dashboard+prompt+test+12345` opened ordinary search results) and must not be used; DuckDuckGo search parameters also do not carry over (`duckduckgo.com/chat?q=…` redirects to `duck.ai/chat` without the text).
 
 Entries marked Backlog record future work only: export destination selection, recent activity, the remaining functional follow-ups (including the F5 fallback and F6), Bing daily and direct Duck.ai prompt transfer are not implemented.
 
 ### Group bar: explicit All button
 
-- Status: Implemented on the recovery branch on 2026-10-01; owner check pending.
+- Status: Implemented on the recovery branch and accepted by the owner on 2026-10-01 at `327ff8c`.
 - Requested: 2026-10-01.  Selecting General showed its two links and clicking it again cleared the filter, which made navigation confusing.
 - Delivered: All comes first, is highlighted when no filter is set, and clears the filter in one click.  The second-click toggle is kept.
+
+### Tile icons: ChatGPT icon and CORS requirement
+
+- Status: Implemented on the recovery branch on 2026-10-01; owner check pending (ChatGPT icon after Refresh icon and after reload).
+- Reported: 2026-10-01.  The ChatGPT tile showed a grey letter instead of its icon.
+- Delivered: icons are requested without a CORS requirement, legacy `chat.openai.com` tiles use the `chatgpt.com` icon without changing the saved URL, placeholder images are skipped, and stale cached sources recover.  Details and evidence are in BASELINE.md.
