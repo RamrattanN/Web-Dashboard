@@ -16,16 +16,27 @@ The page loads Google Fonts and may request favicons from saved sites or externa
 
 ## Wallpaper and data
 
-Bing daily is optional: select it in Settings and enter a market such as
-`en-US` (blank uses `en-US`). The browser contacts Bing directly. Provider
-availability and cross-origin policy can prevent loading; no proxy or backend
-is included. The 2026-10-01 Chromium live-file test was blocked by Bing's CORS
-policy and confirmed preservation of the prior wallpaper; live image loading
-was not verified. Failed requests preserve the background already displayed on the
-page, but that previous image is not cached across reloads. Static URLs and
-local images use the same preload-before-replace path. Solid color is the
-first-run default. The legacy Unsplash keyword option is retained for existing
-settings but its external endpoint is not guaranteed to work.
+Solid color is the first-run default. Static URLs and local images are
+preloaded before they replace the background. A failed request preserves the
+background already displayed on the page, but that previous image is not
+cached across reloads. A failed wallpaper is tried again when you Save
+Settings or reload, not on every redraw. The legacy Unsplash keyword option
+is retained for existing settings but its external endpoint is not guaranteed
+to work.
+
+**Bing daily is deferred and cannot be selected.** Bing does not allow
+browser pages to read its image archive (the request is blocked by CORS), so
+a real Bing image has never loaded in testing; only controlled responses
+have. No proxy or backend is included. Dashboards already saved with Bing
+daily keep that setting: the page still makes one direct request to Bing per
+load and keeps the existing background when it fails. Only a market code
+such as `en-US` is ever sent (blank uses `en-US`); an image or URL is never
+sent as the market.
+
+Each wallpaper mode keeps its own value. Switching mode in Settings shows
+that mode's value, and the other modes' values, including a local image, stay
+saved for when you switch back. A local image too large for browser storage
+produces an error on Save and leaves existing settings unchanged.
 
 Settings save only with Save. Close/Escape discard edits, including newly
 selected local files. Export backs up all links (including those hidden by

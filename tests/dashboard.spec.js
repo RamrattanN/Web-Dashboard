@@ -164,3 +164,165 @@ test('cancel during an active cross-row drag restores the complete collection', 
   await expect(page.locator('.drag-layer, .placeholder')).toHaveCount(0);
   expect(await saved(page)).toEqual(links);
 });
+
+const six = ['Work','Other','Work','Work','Other','Work'].map((group, i) => ({url: `https://example.com/six-${i}`, title: `Six ${i}`, group, desc: `Description ${i}`, icon: pixel}));
+for (const [group, shown, order] of [['All',[0,1,2],[1,2,0,3,4,5]], ['Work',[0,2,3],[2,1,3,0,4,5]]]) test(`import persists after reload; three-of-six reorder keeps hidden links in ${group}`, async ({page}) => {
+  await setup(page);
+  const backup = {links: six, settings: {mode:'none', color:'#654321', maxTiles:3, colsMax:3, groupFilter:group, title:'Imported'}};
+  await page.locator('#importFile').setInputFiles({name:'backup.json', mimeType:'application/json', buffer:Buffer.from(JSON.stringify(backup))});
+  await expect(page.locator('#grid .card .title')).toHaveText(shown.map(i => `Six ${i}`));
+  await page.reload();
+  await expect(page.locator('#grid .card .title')).toHaveText(shown.map(i => `Six ${i}`));
+  await expect(page.locator('#logo')).toHaveText('Imported');
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-color', 'rgb(101, 67, 33)');
+  expect(await saved(page)).toEqual(six);
+  expect(await page.evaluate(() => getSettings())).toMatchObject(backup.settings);
+  await drag(page,0,2);
+  const expected = order.map(i => six[i]);
+  expect(await saved(page)).toEqual(expected);
+  await page.reload(); expect(await saved(page)).toEqual(expected);
+  await expect(page.locator('#grid .card .title')).toHaveText([...shown.slice(1), shown[0]].map(i => `Six ${i}`));
+});
+
+test('cancelled Settings edits leave saved values and appearance unchanged', async ({page}) => {
+  await setup(page, {mode:'local', value:pixel});
+  const before = await page.evaluate(() => localStorage.getItem('startpage.settings.v1'));
+  for (const dismiss of ['Close','Escape']) {
+    await page.locator('#settingsBtn').click();
+    await page.locator('#maxTiles').fill('2');
+    await page.locator('#wallpaperFile').setInputFiles({name:'other.gif', mimeType:'image/gif', buffer:Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64')});
+    await expect(page.locator('#wallpaperValue')).toHaveValue(/^data:image\/gif/);
+    if (dismiss === 'Close') await page.getByRole('button', {name:'Close', exact:true}).click(); else await page.keyboard.press('Escape');
+    await expect(page.locator('#settingsDialog')).not.toBeVisible();
+    expect(await page.evaluate(() => localStorage.getItem('startpage.settings.v1'))).toBe(before);
+    await expect(page.locator('#grid .card')).toHaveCount(6);
+    await expect(page.locator('#wallpaper')).toHaveCSS('background-image', `url("${pixel}")`);
+    await page.locator('#settingsBtn').click();
+    await expect(page.locator('#maxTiles')).toHaveValue('6');
+    await expect(page.locator('#wallpaperMode')).toHaveValue('local');
+    await expect(page.locator('#wallpaperValue')).toHaveValue(pixel);
+    await page.getByRole('button', {name:'Close', exact:true}).click();
+  }
+});
+
+test('failed static wallpaper request preserves the working background', async ({page}) => {
+  await setup(page, {mode:'local', value:pixel});
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-image', `url("${pixel}")`);
+  const warning = page.waitForEvent('console', msg => msg.text().includes('preserving the previous background'));
+  await page.locator('#settingsBtn').click();
+  await page.locator('#wallpaperMode').selectOption('static');
+  await page.locator('#wallpaperValue').fill('https://example.com/missing-wallpaper.png');
+  await page.locator('#saveSettingsBtn').click(); await warning;
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-image', `url("${pixel}")`);
+  expect(await page.evaluate(() => getSettings().mode)).toBe('static');
+});
+
+test('a second pointer during a drag is ignored and the first drag completes intact', async ({page}) => {
+  await setup(page);
+  await page.evaluate(() => { window.opened = []; window.open = (...args) => { window.opened.push(args); }; });
+  const a = await page.locator('#grid .card').first().boundingBox();
+  await page.mouse.move(a.x + a.width/2, a.y + 25); await page.mouse.down();
+  await page.mouse.move(a.x + a.width/2 + 10, a.y + 25);
+  await expect(page.locator('.drag-layer')).toHaveCount(1);
+  const other = page.locator('#grid .card:not(.placeholder)').nth(3);
+  const o = await other.boundingBox();
+  for (const [type, dx] of [['pointerdown',0], ['pointermove',40], ['pointerup',40], ['pointerdown',0], ['pointerup',0]])
+    await other.dispatchEvent(type, {pointerId:7, pointerType:'touch', isPrimary:false, button:0, buttons:type === 'pointerup' ? 0 : 1, clientX:o.x + 30 + dx, clientY:o.y + 25});
+  await expect(page.locator('.drag-layer')).toHaveCount(1);
+  await expect(page.locator('#grid .placeholder')).toHaveCount(1);
+  const b = await page.locator('#grid .card:not(.placeholder)').nth(5).boundingBox();
+  await page.mouse.move(b.x + b.width - 10, b.y + 25, {steps:8}); await page.mouse.up();
+  await expect(page.locator('.drag-layer, .placeholder')).toHaveCount(0);
+  expect(await saved(page)).toEqual([...links.slice(1,6), links[0], ...links.slice(6)]);
+  expect(await page.evaluate(() => window.opened)).toEqual([]);
+});
+
+test('ordering ignores stray placeholders and refuses invalid or duplicate indices', async ({page}) => {
+  await setup(page);
+  await page.evaluate(() => { const stray = document.createElement('div'); stray.className = 'card placeholder'; grid.appendChild(stray); });
+  await drag(page,0,5);
+  const reordered = [...links.slice(1,6), links[0], ...links.slice(6)];
+  expect(await saved(page)).toEqual(reordered);
+  await expect(page.locator('.drag-layer, .placeholder')).toHaveCount(0);
+  for (const index of ['999','-1','1.5','x','1']) {
+    expect(await page.evaluate(index => { render(); grid.querySelector('.card').dataset.gindex = index; return commitOrderFromDOM(); }, index)).toBe(false);
+    expect(await saved(page)).toEqual(reordered);
+  }
+});
+
+for (const [mode, value] of [['local', pixel], ['static', 'https://example.com/wall.png']]) test(`switching from ${mode} to Bing never sends the previous value and keeps it saved`, async ({page}) => {
+  await setup(page, {mode, value});
+  const bing = []; page.on('request', request => { if (request.url().startsWith('https://www.bing.com/')) bing.push(request.url()); });
+  await page.locator('#settingsBtn').click();
+  await expect(page.locator('#wallpaperValue')).toHaveValue(value);
+  await page.evaluate(() => { wallpaperMode.value = 'bing'; wallpaperMode.dispatchEvent(new Event('change', {bubbles:true})); });
+  await expect(page.locator('#wallpaperValue')).toHaveValue('');
+  const request = page.waitForRequest('https://www.bing.com/HPImageArchive*');
+  await page.locator('#saveSettingsBtn').click();
+  expect(new URL((await request).url()).searchParams.get('mkt')).toBe('en-US');
+  expect(await page.evaluate(() => getSettings())).toMatchObject({mode:'bing', value:'', savedValues:{[mode]:value}});
+  if (mode === 'local') await expect(page.locator('#wallpaper')).toHaveCSS('background-image', `url("${pixel}")`);
+  await page.locator('#settingsBtn').click();
+  await page.locator('#wallpaperMode').selectOption(mode);
+  await expect(page.locator('#wallpaperValue')).toHaveValue(value);
+  await page.locator('#saveSettingsBtn').click();
+  expect(await page.evaluate(() => getSettings())).toMatchObject({mode, value});
+  // A value left under Bing by older settings or an edited backup is rejected before any request.
+  await page.evaluate(async value => { setSettings({...getSettings(), mode:'bing', value}); await applyWallpaper(); }, value);
+  expect(bing).toHaveLength(1);
+  if (mode === 'local') await expect(page.locator('#wallpaper')).toHaveCSS('background-image', `url("${pixel}")`);
+});
+
+test('Bing daily is not selectable or the first-run default; a saved Bing mode is preserved', async ({page}) => {
+  await page.route('https://**', route => route.abort());
+  await page.goto(url);
+  await page.evaluate(() => localStorage.clear()); await page.reload();
+  expect(await page.evaluate(() => getSettings().mode)).toBe('none');
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-image', 'none');
+  await page.locator('#settingsBtn').click();
+  await expect(page.locator('#wallpaperMode')).toHaveValue('none');
+  await expect(page.locator('#wallpaperMode option[value="bing"]')).toBeDisabled();
+  await page.getByRole('button', {name:'Close', exact:true}).click();
+  await page.evaluate(() => setSettings({...getSettings(), mode:'bing', value:'en-GB'})); await page.reload();
+  const alerts = []; page.on('dialog', dialog => { alerts.push(dialog.message()); dialog.accept(); });
+  await page.locator('#settingsBtn').click();
+  await expect(page.locator('#wallpaperMode')).toHaveValue('bing');
+  await page.locator('#maxTiles').fill('4');
+  await page.locator('#wallpaperValue').fill('https://example.com/a.png'); await page.locator('#saveSettingsBtn').click();
+  await expect.poll(() => alerts.length).toBe(1); expect(alerts[0]).toContain('Bing market');
+  expect(await page.evaluate(() => getSettings().value)).toBe('en-GB');
+  await page.locator('#wallpaperValue').fill('en-GB'); await page.locator('#saveSettingsBtn').click();
+  await expect(page.locator('#settingsDialog')).not.toBeVisible();
+  expect(await page.evaluate(() => getSettings())).toMatchObject({mode:'bing', value:'en-GB', maxTiles:4});
+});
+
+test('a failed wallpaper is not retried by unrelated renders; Save retries it', async ({page}) => {
+  await setup(page, {mode:'local', value:pixel});
+  const missing = 'https://example.com/missing-wallpaper.png'; let attempts = 0;
+  page.on('request', request => { if (request.url() === missing) attempts++; });
+  await page.evaluate(async missing => { setSettings({...getSettings(), mode:'static', value:missing}); await applyWallpaper(); }, missing);
+  expect(attempts).toBe(1);
+  await page.evaluate(async () => { render(); render(); await applyWallpaper(); });
+  await page.locator('#groupBar .pill').first().click();
+  await expect(page.locator('#groupBar .pill.active')).toHaveCount(1);
+  expect(attempts).toBe(1);
+  const retry = page.waitForRequest(missing);
+  await page.locator('#settingsBtn').click(); await page.locator('#saveSettingsBtn').click(); await retry;
+  expect(attempts).toBe(2);
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-image', `url("${pixel}")`);
+});
+
+test('saving a local image that exceeds storage shows an error and keeps existing settings', async ({page}) => {
+  await setup(page, {mode:'local', value:pixel});
+  const before = await page.evaluate(() => localStorage.getItem('startpage.settings.v1'));
+  const alerts = []; page.on('dialog', dialog => { alerts.push(dialog.message()); dialog.accept(); });
+  await page.locator('#settingsBtn').click();
+  await page.locator('#wallpaperFile').setInputFiles({name:'huge.gif', mimeType:'image/gif', buffer:Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64')});
+  await expect(page.locator('#wallpaperValue')).toHaveValue(/^data:image\/gif/);
+  await page.evaluate(() => { Storage.prototype.setItem = () => { throw new DOMException('Quota exceeded', 'QuotaExceededError'); }; });
+  await page.locator('#saveSettingsBtn').click();
+  await expect.poll(() => alerts.length).toBe(1); expect(alerts[0]).toContain('storage is full');
+  await expect(page.locator('#settingsDialog')).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('startpage.settings.v1'))).toBe(before);
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-image', `url("${pixel}")`);
+});

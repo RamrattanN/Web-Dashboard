@@ -21,6 +21,19 @@
   live Bing success and manual Mac/Safari acceptance remain unverified.
 - Preserve main’s network/privacy guidance and security reporting policy;
   reconcile the stale v1.2.1 baseline document with recovery scope.
+- Fix: a second pointer during a drag, or a drag that never ended, could
+  leave a placeholder behind and save an order with a missing link. Only one
+  pointer drags at a time, cancellation cleans up, and an order is saved only
+  when it is a complete rearrangement of the stored links.
+- Fix: switching wallpaper mode no longer reuses another mode's value, so a
+  local image or URL can never be sent to Bing as the market. Each mode keeps
+  its own saved value; the Bing market must be a code such as `en-US`.
+- Fix: a failed wallpaper is retried on Save or reload, not on every redraw.
+- Fix: a local image too large for browser storage shows an error on Save
+  and leaves existing settings unchanged.
+- Bing daily is deferred: the option is disabled in Settings because Bing
+  blocks browser requests and a real image has never loaded. Saved Bing
+  settings are kept. No proxy or backend added.
 
 ## v1.4.7 — 2025-10-13
 ### Added

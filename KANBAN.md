@@ -89,4 +89,12 @@
 - Acceptance: Verify desktop and narrow-screen presentation, contrast, keyboard focus, saved wallpapers, long titles, tile sizing and density controls, and existing functional regression checks.
 - Do not implement this item or start another editing agent while the current functional workload is underway.
 
+### Functional follow-ups from the PR #3 review
+
+- Status: Backlog.  Recorded 2026-10-01; none of these block the recovery.
+- Bing daily wallpaper: disabled in Settings until a real Bing image is shown to load in a browser.  Bing blocks the request by CORS; re-enabling needs a verified approach and a separate decision on any proxy or backend.
+- Group filter with no matching group (review finding F5): after an import, or after removing or editing the last tile in the active group, the grid is empty and no pill is shown to clear the filter.  Fall back to All, or show a way to clear it.
+- Import of hand-edited backups (review finding F6): numeric settings written as strings, such as `"maxTiles": "3"`, are rejected.  Backups written by the dashboard are unaffected.  Any change must keep validation strict rather than loosen it.
+- Duck.ai search panel: replace the DuckDuckGo panel once it is confirmed in a browser that DuckDuckGo's `!ai` route carries the entered prompt into Duck.ai.
+
 These entries record future work only.  Application behaviour is unchanged.

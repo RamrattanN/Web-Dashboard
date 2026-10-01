@@ -26,7 +26,14 @@ Node and Playwright are developer-only regression tools.
   replacement; network/HTTP/JSON/image failures retain the currently displayed
   image or color. Loading times out after 15 seconds; stale requests cannot
   replace a newer selection. Failed selections retry on a subsequent Save or
-  render. Successful selections are reused during that page session/day.
+  reload, not on unrelated renders. Bing daily is disabled in Settings until
+  live loading is verified; a saved Bing mode is kept and only a market code
+  (`xx-XX`) can be sent to the provider.
+- Each wallpaper mode keeps its own value (`savedValues` holds the inactive
+  modes). A storage failure on Save shows an error and changes nothing.
+- Only one pointer can drag at a time; additional pointers are ignored and
+  cancellation removes the ghost and placeholder. An order is saved only if
+  it is a complete rearrangement of the stored links.
 - The previous image is retained **in the current page only**. There is no
   persistent Bing image cache; after reload a failed request leaves the base
   color. The saved mode remains Bing even when its request fails.
@@ -49,8 +56,14 @@ No browser security settings were changed. This recovery does not solve Bing's
 cross-origin restriction. A proxy/backend would need a separate discussion.
 
 Inline JavaScript syntax, dependency audit (zero reported vulnerabilities),
-and `git diff --check` also passed. Subsequent documentation-only commits do
-not change the tested application or tests.
+and `git diff --check` also passed at that commit.
+
+A later functional-fix commit changed the application and extended the suite
+to 27 deterministic checks plus the live diagnostic (drag overlap and order
+validation, per-mode wallpaper values, Bing market validation and deferral,
+retry behaviour, storage errors, and the three-of-six acceptance scenarios).
+The figures above predate it; its results are the CI checks on PR #3 for the
+current head, not this record.
 
 Mac browser execution in the development agent was blocked: Chrome launch
 aborted under host restrictions, and the browser-control tool denied `file:`
@@ -88,18 +101,14 @@ have not been reverified.
    Add link → Cancel with an empty URL must close immediately; edit a tile's
    title → Cancel must retain its original title. Repeat using Save and
    reload to confirm saved edits persist.
-7. Reimport the fixture, then choose Bing daily, enter `en-US`, and Save.
-   Open DevTools (Option+Command+I), Network, and filter `HPImageArchive`.
-   If Bing allows the request and the image loads, the wallpaper changes.
-   If blocked by CORS, network, or provider error, the fixture background
-   stays visible and Console reports preservation. Record the outcome;
-   Bing live success is not guaranteed by this no-backend application.
-8. Reimport the fixture. In DevTools Network select Offline, then choose
-   Bing daily and Save. Wait up to 15 seconds. Verify the previous wallpaper
-   stays visible. Switch to Solid color while a wallpaper request is pending;
-   its late completion must not override the color. Restore No throttling.
-   Also try Static image URL `https://example.com/missing-wallpaper.png`;
-   failure must preserve the current background.
+7. Reimport the fixture and open Settings. Bing daily must be greyed out and
+   not selectable. Change Wallpaper mode to Static image URL: the value field
+   must become empty, not show the local image data. Change back to Local
+   image file: the image data must return. Close without saving.
+8. Reimport the fixture. In Settings choose Static image URL, enter
+   `https://example.com/missing-wallpaper.png`, and Save. The previous
+   wallpaper must stay visible. Open Settings, choose Local image file, and
+   Save: the fixture wallpaper must still be shown and survive a reload.
 9. Save a local image, Export, reimport the fixture, then Import that export.
    Verify settings, wallpaper, order, groups, icons, and all 16 links restore.
    Import a JSON file containing `{"links":[null]}`: expect an error and no
