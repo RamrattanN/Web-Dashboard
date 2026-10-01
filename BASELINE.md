@@ -242,10 +242,10 @@ reported all seven as passed:
    controls acceptable.
 7. Narrow window: header wraps, search boxes stack, no sideways scrolling.
 
-This acceptance covers `327ff8c`. It does not cover the icon fix below, which
-came afterwards, or Safari, Windows and touch devices.
+This acceptance covers `327ff8c`. The icon fix below came afterwards and has
+its own owner check. Safari, Windows and touch devices are not covered.
 
-## Tile icon fix — implemented after acceptance, owner check pending
+## Tile icon fix — accepted by the owner at `0c22c32`
 
 Reported by the owner: the ChatGPT tile showed a grey letter instead of its
 icon. Cause, established by requesting each icon source directly:
@@ -276,4 +276,4 @@ continues to the next source.
 | --- | --- | --- |
 | Which real sources hold the ChatGPT icon and which headers they send | Agent requests with curl, and viewing the returned images | The real services' answers on 2026-10-01. Not a browser |
 | Official icon shown for a legacy tile with no CORS request and the saved URL unchanged; fallback to a service for `chatgpt.com`; placeholders skipped; monogram when nothing loads; custom icons untouched; Refresh icon and stale-cache recovery | CI (Linux Chromium) with every icon response supplied by the test | The dashboard's lookup logic. Nothing is fetched from the real services |
-| The ChatGPT icon appears after Refresh icon and survives a reload | **Pending owner check** | |
+| The ChatGPT icon appears after Refresh icon and survives a reload; other tile icons unchanged | Owner, normal Chrome on macOS, Dashboard Test profile, at `0c22c32`, reported passed on 2026-10-01 | The owner's real tile, cache and network. One targeted check, not a repeat of the earlier seven |

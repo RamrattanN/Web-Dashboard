@@ -77,7 +77,8 @@
   unchanged. The default ChatGPT tile for new profiles points to
   `https://chatgpt.com`.
 - Owner visual acceptance of the refresh, the All button and the Duck.ai row
-  was given on 2026-10-01 at `327ff8c` (Chrome on macOS).
+  was given on 2026-10-01 at `327ff8c` (Chrome on macOS). The ChatGPT icon
+  fix was accepted by the owner at `0c22c32`.
 
 ## v1.4.7 — 2025-10-13
 ### Added

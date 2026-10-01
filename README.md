@@ -80,7 +80,7 @@ Bing diagnostic reports whether the provider loaded or the fallback remained:
 LIVE_BING=1 npx playwright test --grep 'live Bing browser probe'
 ```
 
-Functional acceptance was completed on 2026-10-01 for Chrome on macOS using the local `file://` dashboard, with complementary Linux Chromium CI coverage.  That record applies to the functional version at `443a334`.  The visual refresh, the All group button and the Duck.ai row were visually accepted by the owner at `327ff8c`; a later tile-icon fix still awaits one owner check.  Safari, Windows and real touch devices are not accepted platforms yet.
+Functional acceptance was completed on 2026-10-01 for Chrome on macOS using the local `file://` dashboard, with complementary Linux Chromium CI coverage.  That record applies to the functional version at `443a334`.  The visual refresh, the All group button and the Duck.ai row were visually accepted by the owner at `327ff8c`; a later tile-icon fix was accepted by the owner at `0c22c32`.  Safari, Windows and real touch devices are not accepted platforms yet.
 
 See [DESIGN_BASELINE.md](DESIGN_BASELINE.md) for the Ramrattan Rentals visual specification.  See [BASELINE.md](BASELINE.md) for recovery provenance, the evidence sources and verification limits, and a repeatable Mac checklist with a 16-link fixture. See
 [CHANGELOG.md](CHANGELOG.md) for changes and [SECURITY.md](SECURITY.md) for

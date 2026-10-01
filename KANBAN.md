@@ -107,6 +107,6 @@ Entries marked Backlog record future work only: export destination selection, re
 
 ### Tile icons: ChatGPT icon and CORS requirement
 
-- Status: Implemented on the recovery branch on 2026-10-01; owner check pending (ChatGPT icon after Refresh icon and after reload).
+- Status: Implemented on the recovery branch and accepted by the owner on 2026-10-01 at `0c22c32` (ChatGPT icon shown after Refresh icon and after reload; other tile icons unchanged).
 - Reported: 2026-10-01.  The ChatGPT tile showed a grey letter instead of its icon.
 - Delivered: icons are requested without a CORS requirement, legacy `chat.openai.com` tiles use the `chatgpt.com` icon without changing the saved URL, placeholder images are skipped, and stale cached sources recover.  Details and evidence are in BASELINE.md.
