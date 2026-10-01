@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dashboard</title>
   <!--
-  WebDashboard v1.4.7
+  WebDashboard v1.5.0-dev
   Author: Nilesh Ramrattan
   Solution concept and implementation assisted by ChatGPT (OpenAI)
   -->
@@ -200,7 +200,7 @@
         </div>
       </div>
       <div class="actions">
-        <button class="btn" value="cancel">Cancel</button>
+        <button class="btn" type="button" onclick="this.closest('dialog').close()">Cancel</button>
         <button class="btn primary" id="saveLinkBtn" value="default">Save</button>
       </div>
     </form>
@@ -241,13 +241,14 @@
         <select id="wallpaperMode">
           <option value="static">Static image URL</option>
           <option value="local">Local image file</option>
+          <option value="bing">Bing daily (requires provider access)</option>
           <option value="unsplash">Unsplash keyword daily</option>
           <option value="none">Solid color</option>
         </select>
       </div>
       <div class="row">
         <div class="field">
-          <label>Image URL or keyword</label>
+          <label>Image URL, keyword, or Bing market (e.g. en-US)</label>
           <input id="wallpaperValue" type="text" placeholder="https://...  or  mountains" />
         </div>
         <div class="field">
@@ -303,7 +304,7 @@
         </div>
       </div>
       <div class="actions">
-        <button class="btn" value="cancel">Close</button>
+        <button class="btn" type="button" onclick="this.closest('dialog').close()">Close</button>
         <button class="btn primary" id="saveSettingsBtn" value="default">Save</button>
       </div>
     </form>
@@ -316,7 +317,7 @@
     const ST_KEY = 'startpage.settings.v1';
     const IC_KEY = 'startpage.iconcache.v1';
         const APP_NAME='WebDashboard';
-        const VERSION='v1.4.7';
+        const VERSION='v1.5.0-dev';
     const grid = document.getElementById('grid');
     const groupBar = document.getElementById('groupBar');
     const logo = document.getElementById('logo');
@@ -325,7 +326,7 @@
     function setLinks(arr){ localStorage.setItem(LS_KEY, JSON.stringify(arr)); }
     function getSettings(){
       const defaults = {
-        mode:'static', value:'https://source.unsplash.com/1600x900/?cityscape', color:'#0b1120',
+        mode:'none', value:'', color:'#0b1120',
         maxTiles:60, showDesc:'yes', groupFilter:'All', showExtraSearch:'yes',
         layout:'cozy', aiDefault:'off', title:'Dashboard',
         colsMax: 10, tileWidth: 220, lockLayout: 'no'
@@ -442,55 +443,17 @@
       return el;
     }
 
-    function reorderGlobal(from, to, anchor){
-      const arr = getLinks();
-      const [m] = arr.splice(from, 1);
-      if (to > arr.length) to = arr.length;
-      if (anchor === 'before' && to > from) to -= 1;
-      arr.splice(to, 0, m);
-      setLinks(arr);
-      render();
-    }
     function removeAt(globalIndex){ const arr = getLinks(); arr.splice(globalIndex,1); setLinks(arr); render(); }
-        // Rebuild array order from current DOM order of visible cards plus the dragged item.
-        function commitOrderFromDOM(dragGIndex, insertPos){
-          const st = getSettings();
-          const allCards = Array.from(grid.querySelectorAll('.card')); // visible cards, not including placeholder
-          const visibleG = allCards.map(c => Number(c.dataset.gindex));
-          const newVisible = visibleG.slice();
-          // insert dragged global index at the placeholder slot
-          newVisible.splice(insertPos, 0, dragGIndex);
 
-          // If All groups are shown, we can directly reorder the whole array by this sequence
-          const arr = getLinks();
-          if (!st.groupFilter || st.groupFilter === 'All'){
-            // Build map gindex -> object reference
-            const objects = arr.map(x => x);
-            const reordered = newVisible.map(g => objects[g]);
-            setLinks(reordered);
-            return;
-          }
-
-          // Otherwise, reorder only the items of the active group in place, preserving other items.
-          const active = st.groupFilter.toLowerCase();
-          const objects = arr.map(x => x);
-          // Determine which global indices are part of the active group
-          const activeIndices = arr.map((x, i) => ((x.group||'').toLowerCase() === active) ? i : -1).filter(i => i >= 0);
-          // Filter newVisible to active-only and convert to objects
-          const activeNewSequence = newVisible.filter(i => activeIndices.includes(i)).map(i => objects[i]);
-          // Now stitch back: walk original arr, and whenever we hit an active index, pull the next from activeNewSequence
-          let cursor = 0;
-          const result = arr.map((item, idx) => {
-            if (activeIndices.includes(idx)){
-              const nextObj = activeNewSequence[cursor++];
-              return nextObj;
-            } else {
-              return item;
-            }
-          });
-          setLinks(result);
-        }
-
+    // Replace only displayed slots. Hidden links and other groups retain their positions.
+    function commitOrderFromDOM(){
+      const arr = getLinks();
+      const sequence = Array.from(grid.querySelectorAll('.card')).map(c => Number(c.dataset.gindex));
+      const slots = [...sequence].sort((a,b) => a-b);
+      const result = arr.slice();
+      slots.forEach((slot, i) => { result[slot] = arr[sequence[i]]; });
+      setLinks(result);
+    }
 
     function openLinkDialog(mode, item={}, globalIndex=-1){
       const linkDialog = document.getElementById('linkDialog');
@@ -514,15 +477,55 @@
     }
 
     const wallpaper = document.getElementById('wallpaper');
-    function applyWallpaper(){
+    let wallpaperRequest = 0;
+    let wallpaperSelection = '';
+    async function applyWallpaper(){
       const st = getSettings();
-      let url = '';
-      if (st.mode === 'none'){ wallpaper.style.background = st.color || '#0b1120'; wallpaper.style.backgroundImage = 'none'; return; }
-      wallpaper.style.background = 'none';
-      if (st.mode === 'static') url = st.value;
-      if (st.mode === 'local') url = st.value;
-      if (st.mode === 'unsplash'){ const k = encodeURIComponent(st.value || 'landscape'); const d = new Date(); const stamp = `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; url = `https://source.unsplash.com/1600x900/?${k}&sig=${stamp}`; }
-      wallpaper.style.backgroundImage = `url('${url}')`;
+      const selection = JSON.stringify([st.mode, st.value, st.color, new Date().toDateString()]);
+      if (selection === wallpaperSelection) return;
+      wallpaperSelection = selection;
+      const request = ++wallpaperRequest;
+      if (st.mode === 'none'){
+        wallpaper.style.backgroundImage = 'none';
+        wallpaper.style.backgroundColor = st.color || '#0b1120';
+        return;
+      }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      try {
+        let url = st.value;
+        if (st.mode === 'bing'){
+          const response = await fetch('https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=' + encodeURIComponent(st.value.trim() || 'en-US'), {signal: controller.signal});
+          if (!response.ok) throw new Error('Bing HTTP ' + response.status);
+          const data = await response.json();
+          const raw = data.images?.[0]?.url;
+          if (!raw) throw new Error('No Bing image URL');
+          const imageURL = new URL(raw, 'https://www.bing.com');
+          if (imageURL.protocol !== 'https:' || imageURL.hostname !== 'www.bing.com') throw new Error('Unexpected Bing image URL');
+          url = imageURL.href;
+        } else if (st.mode === 'unsplash'){
+          url = 'https://source.unsplash.com/1600x900/?' + encodeURIComponent(st.value || 'landscape') + '&sig=' + new Date().toDateString();
+        }
+        if (!url) throw new Error('No wallpaper image selected');
+        await new Promise((resolve, reject) => {
+          const img = new Image();
+          const cleanup = () => { img.onload = img.onerror = null; controller.signal.removeEventListener('abort', abort); };
+          const abort = () => { cleanup(); img.src = ''; reject(new Error('Wallpaper timed out')); };
+          img.referrerPolicy = 'no-referrer';
+          img.onload = () => { cleanup(); resolve(); };
+          img.onerror = () => { cleanup(); reject(new Error('Wallpaper image failed to load')); };
+          controller.signal.addEventListener('abort', abort, {once:true});
+          if (controller.signal.aborted) return abort();
+          img.src = url;
+        });
+        if (request !== wallpaperRequest) return;
+        wallpaper.style.backgroundImage = `url(${JSON.stringify(url)})`;
+      } catch (error){
+        if (request === wallpaperRequest){
+          wallpaperSelection = ''; // Allow retry on the next render or Save.
+          console.warn('Wallpaper failed; preserving the previous background.', error);
+        }
+      } finally { clearTimeout(timeout); }
     }
 
     function applyLayout(layout){
@@ -548,7 +551,42 @@
     const importFile = document.getElementById('importFile');
     exportBtn.onclick = () => { const blob = new Blob([JSON.stringify({ links: getLinks(), settings: getSettings() }, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'dashboard-backup.json'; a.click(); URL.revokeObjectURL(a.href); };
     importBtn.onclick = () => importFile.click();
-    importFile.onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { const data = JSON.parse(await f.text()); if (Array.isArray(data.links)) setLinks(data.links); if (data.settings) setSettings(Object.assign(getSettings(), data.settings)); render(); } catch { alert('Could not import.  Invalid file.'); } importFile.value=''; };
+    function validateBackup(data){
+      if (!data || !Array.isArray(data.links)) throw new Error('Missing links');
+      if (!data.links.every(link => link && typeof link.url === 'string' &&
+          ['title','desc','group','icon'].every(key => link[key] === undefined || typeof link[key] === 'string')))
+        throw new Error('Invalid link');
+      if (data.settings !== undefined){
+        if (!data.settings || typeof data.settings !== 'object' || Array.isArray(data.settings)) throw new Error('Invalid settings');
+        const st = data.settings;
+        for (const key of ['mode','value','color','showDesc','groupFilter','showExtraSearch','layout','aiDefault','title','lockLayout','backupRemind']){
+          if (st[key] !== undefined && typeof st[key] !== 'string') throw new Error('Invalid setting: ' + key);
+        }
+        for (const key of ['maxTiles','colsMax','tileWidth']){
+          if (st[key] !== undefined && (!Number.isFinite(st[key]) || st[key] < 1)) throw new Error('Invalid setting: ' + key);
+        }
+      }
+    }
+    importFile.onchange = async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      const previousLinks = localStorage.getItem(LS_KEY);
+      const previousSettings = localStorage.getItem(ST_KEY);
+      try {
+        const data = JSON.parse(await f.text());
+        validateBackup(data); // Validate the entire backup before replacing any data.
+        try {
+          setLinks(data.links);
+          if (data.settings) setSettings(Object.assign(getSettings(), data.settings));
+        } catch (error){
+          for (const [key, value] of [[LS_KEY, previousLinks], [ST_KEY, previousSettings]]){
+            if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value);
+          }
+          throw error;
+        }
+        render();
+      } catch { alert('Could not import. Invalid backup or browser storage is full.'); }
+      importFile.value = '';
+    };
 
     const settingsBtn = document.getElementById('settingsBtn');
     const settingsDialog = document.getElementById('settingsDialog');
@@ -570,6 +608,7 @@
     settingsBtn.onclick = () => {
           setTimeout(ensureVersionLabel, 0);
           const vf=document.getElementById('versionFooter'); if(vf){vf.textContent=`${APP_NAME} ${VERSION}`;}
+      wallpaperFile.value = '';
       const st = getSettings();
       wallpaperMode.value = st.mode||'static'; wallpaperValue.value = st.value||''; wallpaperColor.value = st.color||'#0b1120';
       maxTilesInput.value = st.maxTiles||60; showDescInput.value = st.showDesc||'yes'; defaultGroupInput.value = st.groupFilter||'All';
@@ -593,7 +632,22 @@
       }));
       settingsDialog.close(); render();
     };
-    wallpaperFile.onchange = (e) => { const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ const st=getSettings(); st.mode='local'; st.value=r.result; setSettings(st); applyWallpaper(); }; r.readAsDataURL(f); };
+    const wallpaperFile = document.getElementById('wallpaperFile');
+    let wallpaperRead = 0;
+    settingsDialog.addEventListener('close', () => { wallpaperRead++; document.getElementById('saveSettingsBtn').disabled = false; });
+    wallpaperFile.onchange = async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      const read = ++wallpaperRead;
+      const save = document.getElementById('saveSettingsBtn');
+      save.disabled = true;
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (read !== wallpaperRead || !settingsDialog.open) return;
+        wallpaperMode.value = 'local'; wallpaperValue.value = reader.result; save.disabled = false;
+      };
+      reader.onerror = () => { if (read === wallpaperRead) { save.disabled = false; alert('Could not read image.'); } };
+      reader.readAsDataURL(f);
+    };
 
     document.getElementById('addBtn').onclick = () => openLinkDialog('add');
 
@@ -625,7 +679,7 @@
     // Pointer-based drag and drop with controlled tap-to-open
     function wirePointerDnD(){
       const st = getSettings();
-      if (st.lockLayout === 'yes') return;
+
       const cards = Array.from(grid.querySelectorAll('.card'));
       cards.forEach(card => {
         card.addEventListener('dragstart', ev => ev.preventDefault());
@@ -634,7 +688,6 @@
     }
 
     let dragState = null;
-    let isDropping = false;
     const TAP_THRESHOLD = 4; // px
 
     function onPointerDownCard(e, card){
@@ -669,12 +722,13 @@
       document.body.appendChild(ghost);
       dragState.ghost = ghost;
 
-      card.style.visibility = 'hidden';
+      card.style.display = 'none';
     }
 
     function onPointerMove(e){
       if (!dragState) return;
       const moved = Math.abs(e.clientX - dragState.startX) + Math.abs(e.clientY - dragState.startY);
+      if (getSettings().lockLayout === 'yes') return;
       if (!dragState.started && moved > TAP_THRESHOLD) startDrag(e);
       if (!dragState.started) return;
 
@@ -722,12 +776,18 @@
     function onPointerUp(e){
       if (!dragState) return;
       const { card, placeholder } = dragState;
-      card.releasePointerCapture(e.pointerId);
+      if (card.hasPointerCapture(e.pointerId)) card.releasePointerCapture(e.pointerId);
       card.onpointermove = null;
       card.onpointerup = null;
       card.onpointercancel = null;
 
       const moved = Math.abs(e.clientX - dragState.startX) + Math.abs(e.clientY - dragState.startY);
+
+      if (e.type === 'pointercancel'){
+        card.style.display = '';
+        dragState.ghost?.remove(); dragState.placeholder?.remove(); dragState = null;
+        return;
+      }
 
       if (!dragState.started){
         // Treat as a tap if minimal movement
@@ -739,24 +799,13 @@
         return;
       }
 
-      isDropping = true;
-      setTimeout(() => { isDropping = false; }, 150);
-
-      let toGlobal, anchor;
-      const beforeEl = placeholder.nextElementSibling && placeholder.nextElementSibling.classList && placeholder.nextElementSibling.classList.contains('card') ? placeholder.nextElementSibling : null;
-      const afterEl = placeholder.previousElementSibling && placeholder.previousElementSibling.classList && placeholder.previousElementSibling.classList.contains('card') ? placeholder.previousElementSibling : null;
-      if (beforeEl){ toGlobal = Number(beforeEl.dataset.gindex); anchor = 'before'; }
-      else if (afterEl){ toGlobal = Number(afterEl.dataset.gindex) + 1; anchor = 'after'; }
-      else { toGlobal = getLinks().length; anchor = 'end'; }
-
-      const fromGlobal = Number(card.dataset.gindex);
-
-      card.style.visibility = '';
-      if (dragState.ghost) dragState.ghost.remove();
-      if (dragState.placeholder) dragState.placeholder.remove();
+      grid.insertBefore(card, placeholder);
+      placeholder.remove();
+      dragState.ghost.remove();
+      card.style.display = '';
       dragState = null;
-
-      reorderGlobal(fromGlobal, toGlobal, anchor);
+      commitOrderFromDOM();
+      render();
     }
 
     if (!localStorage.getItem(LS_KEY)){
@@ -780,7 +829,7 @@
           const sheet = dlg.querySelector('.sheet');
           if (sheet){
             let headerRow = sheet.querySelector('.settings-header-row');
-            const h2 = sheet.querySelector('h2');
+            const h2 = sheet.querySelector('h2, h3');
             if (h2 && !headerRow){
               headerRow = document.createElement('div');
               headerRow.className = 'settings-header-row';

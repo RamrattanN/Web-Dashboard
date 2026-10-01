@@ -6,3 +6,8 @@ dashboard-backup.json
 # OS noise
 .DS_Store
 Thumbs.db
+
+# Developer-only browser checks
+node_modules/
+test-results/
+playwright-report/
