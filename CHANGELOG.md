@@ -95,6 +95,20 @@
   label wraps, which fixes the wallpaper value input sitting lower than the
   solid colour input. Fields still stack on narrow screens. Visually accepted
   by the owner at `814a2cd` (Chrome on macOS), separately from Picsum.
+- Search section: six provider boxes (Google, Bing, Duck.ai, Perplexity,
+  ChatGPT, Claude) with more space between the header and the boxes. Google
+  and Bing now open in a new tab, like Perplexity, leaving the dashboard and
+  the typed query in place; an empty box opens nothing. ChatGPT and Claude
+  are new and, like Duck.ai, use Copy & open because no documented and
+  verified web address accepts a prompt. Perplexity gains an Open link in
+  place of two disabled buttons.
+- Provider boxes can be reordered with a grip (drag), a Move earlier / Move
+  later menu, or the arrow keys. The order is saved as `providerOrder`,
+  survives reload and travels in backups; tile order is unaffected.
+- The "Show secondary search row" setting is renamed "Show AI providers" and
+  hides Duck.ai, Perplexity, ChatGPT and Claude together. Its stored key and
+  its effect on Duck.ai and Perplexity are unchanged.
+- The search-section changes above await owner acceptance.
 - Owner visual acceptance of the refresh, the All button and the Duck.ai row
   was given on 2026-10-01 at `327ff8c` (Chrome on macOS). The ChatGPT icon
   fix was accepted by the owner at `0c22c32`.

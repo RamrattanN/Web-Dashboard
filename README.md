@@ -21,16 +21,37 @@ highlighted when no filter is set and shows every link up to the tile limit.
 Choosing a group shows only that group; clicking the selected group again, or
 clicking All, clears the filter.  The choice is remembered across reloads.
 
-The Google, Bing and Perplexity rows submit the typed text to those sites.
-The **Duck.ai** row works differently, because no way of passing a prompt to
-Duck.ai in its address has been verified (DuckDuckGo's `!ai` route was tested
-and did not carry the prompt).  Pressing Enter or **Copy & open** copies the
-prompt to the clipboard and opens `https://duck.ai/` in a new tab; you then
-paste it there.  The typed prompt stays in the box.  If the browser refuses
-the copy, Duck.ai is not opened and a message says so; if the new tab is
-blocked, a message points to **Open Duck.ai**, an ordinary link that opens
-Duck.ai without a prompt.  Duck.ai may show a welcome screen before it
-accepts a paste.  Nothing typed in this row is sent anywhere by the dashboard.
+There are six separate search boxes: Google, Bing, Duck.ai, Perplexity,
+ChatGPT and Claude.  Nothing is sent until you press Enter or a box's button.
+
+- **Google, Bing and Perplexity** open the result in a new tab with the query
+  encoded by the browser.  The dashboard tab and the typed text stay as they
+  are.  An empty box opens nothing and says so.
+- **Duck.ai, ChatGPT and Claude** use **Copy & open**: the prompt is copied to
+  the clipboard, the provider opens in a new tab, and you paste it there.
+  None of the three has an officially documented web address for receiving a
+  prompt that has also been verified here: DuckDuckGo documents none and its
+  `!ai` route failed the owner's test; OpenAI documents its browser extension
+  rather than an address; Anthropic documents a `claude://` link for the
+  Claude Desktop app only.  The typed prompt stays in the box.  If the
+  browser refuses the copy, nothing is opened and a message says so; if the
+  new tab is blocked, the message points to the box's **Open** link.  A
+  provider may show a welcome or sign-in screen before it accepts a paste.
+- Each AI box, including Perplexity, has an ordinary **Open** link that opens
+  the provider without a prompt.
+
+**Reordering.**  Drag a box by the grip at its left edge, or focus the grip
+and press Enter for **Move earlier** and **Move later** (the arrow keys also
+move it).  Typed text stays in each box.  The order is saved, survives a
+reload, and is included in backups as `providerOrder`; backups and settings
+without it use the default order.  It is separate from the order of the
+shortcut tiles.
+
+The Settings option **Show AI providers** (stored as `showExtraSearch`, as
+before) shows or hides Duck.ai, Perplexity, ChatGPT and Claude together.  It
+used to hide the second row, which held Duck.ai and Perplexity; it has the
+same effect on those two and now also covers the two new AI boxes.  Google
+and Bing are always shown.
 
 ## Wallpaper and data
 

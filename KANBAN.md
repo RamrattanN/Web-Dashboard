@@ -117,3 +117,10 @@ Entries marked Backlog record future work only: export destination selection, re
 - Status: Implemented on the recovery branch and accepted by the owner on 2026-10-01 at `fd8b37e` (loading, same-photo reload, Change picture with persistence, offline failure and retry, switching back to the local image).  The new-day change of photo is covered by CI only.
 - Background: the owner's isolated investigation showed Picsum images load directly in Chrome on macOS from `file://` and localhost.
 - Delivered: a Picsum daily mode seeded by the local date, a Change picture button, same-day persistence of the loaded picture, failure retention with Try again, and backup compatibility.  Bing daily remains disabled and unchanged.  Details and evidence are in BASELINE.md.
+
+### Search section: six providers, spacing and reordering
+
+- Status: Implemented on the recovery branch on 2026-10-01; **owner acceptance pending**.
+- Requested: 2026-10-01.
+- Delivered: more space under the header; ChatGPT and Claude boxes added; Google and Bing open in a new tab; Copy & open for Duck.ai, ChatGPT and Claude; an Open link for every AI provider; drag, menu and arrow-key reordering saved as `providerOrder`.  Details and evidence are in BASELINE.md.
+- Still in Backlog: sending a prompt directly to Duck.ai, ChatGPT or Claude, only once a documented route is verified in a browser.

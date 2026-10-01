@@ -380,7 +380,7 @@ test('Duck.ai row copies the prompt, opens Duck.ai, keeps the text, and reports 
     window.open = (...args) => { window.opened.push(args); return window.openResult; };
     Object.defineProperty(navigator, 'clipboard', {configurable:true, value:{writeText: async text => { window.copied.push(text); }}});
   });
-  const form = page.locator('#duckForm'), prompt = page.locator('#duckPrompt'), status = page.locator('#duckStatus');
+  const form = page.locator('#duckForm'), prompt = page.locator('#duckPrompt'), status = page.locator('#providerStatus');
   await expect(form.locator('.engine')).toHaveText('Duck.ai');
   await expect(prompt).toHaveAttribute('placeholder', 'Prompt to copy for Duck.ai');
   await expect(page.locator('#duckCopyOpen')).toHaveAccessibleName('Copy prompt and open Duck.ai');
@@ -430,9 +430,11 @@ test('Duck.ai row copies the prompt, opens Duck.ai, keeps the text, and reports 
   await expect(page.locator('#pxForm')).toHaveAttribute('action', 'https://www.perplexity.ai/search');
   await page.locator('#googleForm input[name=q]').fill('find this'); await page.locator('#gAI').click();
   expect((await snapshot()).opened).toEqual([['https://www.perplexity.ai/search?q=find%20this','_blank']]);
-  // The secondary row setting still hides the Duck.ai and Perplexity rows.
+  // The setting that hid the secondary row still hides Duck.ai and Perplexity, and now ChatGPT and Claude as well.
   await page.evaluate(() => { setSettings({...getSettings(), showExtraSearch:'no'}); render(); });
   await expect(form).toBeHidden(); await expect(page.locator('#pxForm')).toBeHidden();
+  await expect(page.locator('#chatgptForm')).toBeHidden(); await expect(page.locator('#claudeForm')).toBeHidden();
+  await expect(page.locator('#googleForm')).toBeVisible(); await expect(page.locator('#bingForm')).toBeVisible();
   expect(external).toEqual([]);
 });
 
@@ -444,7 +446,7 @@ for (const origin of ['file', 'http']) test(`Duck.ai prompt reaches the real cli
   expect(await page.evaluate(() => window.isSecureContext)).toBe(origin === 'file');
   await page.evaluate(() => { window.opened = []; window.open = (...args) => { window.opened.push(args); return {}; }; });
   await page.locator('#duckPrompt').fill(`real clipboard from ${origin}`); await page.locator('#duckPrompt').press('Enter');
-  await expect(page.locator('#duckStatus')).toHaveText(/Prompt copied and Duck\.ai opened/);
+  await expect(page.locator('#providerStatus')).toHaveText(/Prompt copied and Duck\.ai opened/);
   expect(await page.evaluate(() => window.opened)).toEqual([['https://duck.ai/','_blank']]);
   const target = page.locator('#googleForm input[name=q]');
   await target.click(); await page.keyboard.press('ControlOrMeta+V');
@@ -852,4 +854,224 @@ test('1px and failed icon sources advance to the next valid source; exhausted so
   expect(requests.map(request => request.url)).toEqual([custom]);
   expect(await iconCache(page)).toEqual({});
   await expect(page.locator('#grid .card .tile-letter')).toHaveCount(0);
+});
+
+// Search providers. Destinations are intercepted, so these prove what the dashboard opens and sends,
+// not how Google, Bing, Perplexity, Duck.ai, ChatGPT or Claude respond.
+const providerOrder = page => page.locator('#providerGrid .search').evaluateAll(forms => forms.map(form => form.dataset.provider));
+const DEFAULT_PROVIDERS = ['google', 'bing', 'duck', 'perplexity', 'chatgpt', 'claude'];
+const queries = ['two words', 'naïve café 東京 🚀', 'C++ & "quotes" #1 ?=/+% a+b'];
+for (const [name, formId, base] of [['Google', '#googleForm', 'https://www.google.com/search'], ['Bing', '#bingForm', 'https://www.bing.com/search'], ['Perplexity', '#pxForm', 'https://www.perplexity.ai/search']]) {
+  test(`${name} opens the encoded query in a new tab and keeps the dashboard and its input`, async ({page}) => {
+    await setup(page);
+    await page.context().route(/^https:\/\/(www\.google\.com|www\.bing\.com|www\.perplexity\.ai)\//, route => route.fulfill({contentType: 'text/plain', body: 'destination'}));
+    const input = page.locator(`${formId} input[name=q]`);
+    const dashboard = page.url();
+    for (const query of queries) {
+      const opened = page.waitForEvent('popup');
+      await input.fill(query); await input.press('Enter');
+      const tab = await opened;
+      await tab.waitForLoadState();
+      const target = new URL(tab.url());
+      expect(target.origin + target.pathname).toBe(base);
+      expect(target.searchParams.get('q')).toBe(query);              // decodes to exactly what was typed
+      expect([...target.searchParams.keys()]).toEqual(['q']);        // nothing else is sent
+      expect(tab.url().slice(base.length)).toMatch(/^\?q=[A-Za-z0-9%+*._~-]*$/); // every other character is percent-encoded
+      expect(page.url()).toBe(dashboard);
+      await expect(input).toHaveValue(query);
+      await tab.close();
+    }
+    // Empty or blank input opens nothing and says why.
+    const pages = page.context().pages().length;
+    await input.fill('   '); await input.press('Enter');
+    await expect(page.locator('#providerStatus')).toContainText(name === 'Perplexity' ? 'Type a question for Perplexity first' : `Type a search for ${name} first`);
+    await expect(page.locator('#providerStatus')).toHaveClass(/error/);
+    expect(page.context().pages().length).toBe(pages);
+    await expect(input).toBeFocused();
+  });
+}
+
+for (const [id, name, address] of [['duck', 'Duck.ai', 'https://duck.ai/'], ['chatgpt', 'ChatGPT', 'https://chatgpt.com/'], ['claude', 'Claude', 'https://claude.ai/new']]) {
+  test(`${name} uses Copy & open: success, copy refusal, blocked tab and empty input (mocked)`, async ({page}) => {
+    await setup(page);
+    const external = []; page.on('request', request => { if (/duck\.ai|chatgpt\.com|claude\.ai|openai\.com|anthropic\.com/.test(request.url())) external.push(request.url()); });
+    await page.evaluate(() => {
+      window.opened = []; window.copied = []; window.openResult = {};
+      window.open = (...args) => { window.opened.push(args); return window.openResult; };
+      Object.defineProperty(navigator, 'clipboard', {configurable: true, value: {writeText: async text => { window.copied.push(text); }}});
+    });
+    const prompt = page.locator(`#${id}Prompt`), status = page.locator('#providerStatus');
+    const snapshot = () => page.evaluate(() => ({opened: window.opened, copied: window.copied}));
+    await expect(page.locator(`#${id}Form .engine`)).toHaveText(name);
+    await expect(prompt).toHaveAttribute('placeholder', `Prompt to copy for ${name}`);
+    await expect(page.locator(`#${id}CopyOpen`)).toHaveAccessibleName(`Copy prompt and open ${name}`);
+    await expect(page.locator(`#${id}Open`)).toHaveAccessibleName(`Open ${name} without a prompt`);
+    await expect(page.locator(`#${id}Open`)).toHaveAttribute('href', address);
+    await expect(page.locator(`#${id}Open`)).toHaveAttribute('target', '_blank');
+    expect(await page.locator(`#${id}Form`).evaluate(form => form.querySelector('[name]'))).toBeNull(); // nothing in this box can be sent by a form submission
+    // Typing alone sends and opens nothing.
+    await prompt.fill('summarise naïve café notes & "quotes"');
+    expect(await snapshot()).toEqual({opened: [], copied: []});
+    await prompt.press('Enter');
+    await expect(status).toHaveText(new RegExp(`^Prompt copied and ${name.replace('.', '\\.')} opened in a new tab\\. Paste the prompt there\\.`));
+    await expect(status).not.toHaveClass(/error/);
+    expect(await snapshot()).toEqual({opened: [[address, '_blank']], copied: ['summarise naïve café notes & "quotes"']});
+    await expect(prompt).toHaveValue('summarise naïve café notes & "quotes"');
+    await page.locator(`#${id}CopyOpen`).click();
+    expect((await snapshot()).opened).toEqual([[address, '_blank'], [address, '_blank']]);
+    // Empty input.
+    await prompt.fill(''); await page.locator(`#${id}CopyOpen`).click();
+    await expect(status).toHaveText(`Type a prompt first, or use Open ${name} to start an empty chat.`); await expect(status).toHaveClass(/error/);
+    expect((await snapshot()).opened).toHaveLength(2);
+    // Blocked tab.
+    await page.evaluate(() => { window.openResult = null; });
+    await prompt.fill('blocked'); await prompt.press('Enter');
+    await expect(status).toHaveText(`Prompt copied, but the browser blocked the new tab. Use Open ${name}, then paste the prompt there.`);
+    await expect(prompt).toHaveValue('blocked');
+    // Copy refused: nothing is opened and the text stays selected in the box.
+    await page.evaluate(() => { window.openResult = {}; window.opened = []; navigator.clipboard.writeText = async () => { throw new Error('denied'); }; document.execCommand = () => false; });
+    await prompt.fill('keep me'); await prompt.press('Enter');
+    await expect(status).toHaveText(`Could not copy the prompt. It is still in the box: copy it yourself, then use Open ${name} and paste it there.`);
+    expect((await snapshot()).opened).toEqual([]);
+    await expect(prompt).toHaveValue('keep me');
+    expect(await prompt.evaluate(el => el.value.slice(el.selectionStart, el.selectionEnd))).toBe('keep me');
+    expect(external).toEqual([]);
+  });
+}
+
+async function dragProvider(page, from, to, {release = true} = {}) {
+  const handle = await page.locator(`#providerGrid .search[data-provider="${from}"] .drag-handle`).boundingBox();
+  await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2); await page.mouse.down();
+  await page.mouse.move(handle.x + handle.width / 2 + 12, handle.y + handle.height / 2 + 6);
+  const target = await page.locator(`#providerGrid .search[data-provider="${to}"]`).boundingBox();
+  await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, {steps: 10});
+  if (release) await page.mouse.up();
+}
+
+test('provider boxes reorder by their grip, keep what is typed, persist, and leave tile order alone', async ({page}) => {
+  await setup(page);
+  expect(await providerOrder(page)).toEqual(DEFAULT_PROVIDERS);
+  expect(await page.evaluate(() => getSettings().providerOrder)).toBeUndefined();
+  await expect(page.locator('#googleForm .drag-handle')).toHaveAccessibleName('Reorder the Google box');
+  const typed = {google: 'g text', bing: 'b text', duck: 'd text', perplexity: 'p text', chatgpt: 'c text', claude: 'a text'};
+  for (const [id, text] of Object.entries(typed)) await page.locator(`#providerGrid .search[data-provider="${id}"] input[type=text]`).fill(text);
+  const values = () => page.locator('#providerGrid .search').evaluateAll(forms => Object.fromEntries(forms.map(form => [form.dataset.provider, form.querySelector('input[type=text]').value])));
+  // Dragging from the input, the label or a control does not reorder; text selection in the input still works.
+  for (const selector of ['input[type=text]', '.engine', '.mic']) {
+    const from = await page.locator(`#googleForm ${selector}`).boundingBox(), to = await page.locator('#claudeForm').boundingBox();
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2); await page.mouse.down();
+    await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, {steps: 6}); await page.mouse.up();
+    expect(await providerOrder(page)).toEqual(DEFAULT_PROVIDERS);
+  }
+  const box = await page.locator('#googleForm input[type=text]').boundingBox();
+  await page.mouse.move(box.x + 4, box.y + box.height / 2); await page.mouse.down(); await page.mouse.move(box.x + box.width - 4, box.y + box.height / 2, {steps: 4}); await page.mouse.up();
+  expect(await page.locator('#googleForm input[type=text]').evaluate(el => el.value.slice(el.selectionStart, el.selectionEnd))).toBe('g text');
+  await page.evaluate(() => { window.opened = []; window.open = (...args) => { window.opened.push(args); return {}; }; });
+  // Forwards across rows, then backwards.
+  await dragProvider(page, 'google', 'claude');
+  expect(await providerOrder(page)).toEqual(['bing', 'duck', 'perplexity', 'chatgpt', 'claude', 'google']);
+  await expect(page.locator('#providerGrid .reordering')).toHaveCount(0);
+  await expect(page.locator('#providerGrid .provider-menu:visible')).toHaveCount(0); // a drag is not a click on the grip
+  expect(await values()).toEqual(typed);
+  expect(await page.evaluate(() => getSettings().providerOrder)).toEqual(['bing', 'duck', 'perplexity', 'chatgpt', 'claude', 'google']);
+  await dragProvider(page, 'claude', 'bing');
+  expect(await providerOrder(page)).toEqual(['claude', 'bing', 'duck', 'perplexity', 'chatgpt', 'google']);
+  expect(await values()).toEqual(typed);
+  expect(await page.evaluate(() => window.opened)).toEqual([]);
+  // A cancelled drag puts everything back and saves nothing.
+  await dragProvider(page, 'claude', 'google', {release: false});
+  await expect(page.locator('#claudeForm')).toHaveClass(/reordering/);
+  await page.locator('#claudeForm .drag-handle').dispatchEvent('pointercancel', {pointerId: 1});
+  await page.mouse.up();
+  await expect(page.locator('#providerGrid .reordering')).toHaveCount(0);
+  expect(await providerOrder(page)).toEqual(['claude', 'bing', 'duck', 'perplexity', 'chatgpt', 'google']);
+  expect(await page.evaluate(() => getSettings().providerOrder)).toEqual(['claude', 'bing', 'duck', 'perplexity', 'chatgpt', 'google']);
+  expect(await page.locator('#providerGrid .search').evaluateAll(forms => forms.every(form => form.style.order === ''))).toBe(true);
+  // The order survives a reload; shortcut tiles are untouched throughout.
+  await page.reload();
+  expect(await providerOrder(page)).toEqual(['claude', 'bing', 'duck', 'perplexity', 'chatgpt', 'google']);
+  expect(await saved(page)).toEqual(links);
+  await drag(page, 0, 2);
+  expect(await providerOrder(page)).toEqual(['claude', 'bing', 'duck', 'perplexity', 'chatgpt', 'google']);
+  expect((await saved(page)).slice(0, 3).map(link => link.title)).toEqual(['Tile 1', 'Tile 2', 'Tile 0']);
+});
+
+test('provider boxes can be moved with the keyboard: menu actions and arrow keys', async ({page}) => {
+  await setup(page);
+  const handle = page.locator('#bingForm .drag-handle');
+  await page.locator('#bingForm input[type=text]').fill('typed in Bing');
+  await handle.focus();
+  await expect(handle).toHaveAttribute('aria-expanded', 'false');
+  await page.keyboard.press('Enter');
+  await expect(handle).toHaveAttribute('aria-expanded', 'true');
+  const earlier = page.locator('#bingForm').getByRole('button', {name: 'Move earlier', exact: true}), later = page.locator('#bingForm').getByRole('button', {name: 'Move later', exact: true});
+  await expect(earlier).toBeVisible(); await expect(later).toBeVisible();
+  await page.keyboard.press('Tab'); // the menu follows the box's other controls in tab order
+  await later.focus(); await page.keyboard.press('Enter');
+  expect(await providerOrder(page)).toEqual(['google', 'duck', 'bing', 'perplexity', 'chatgpt', 'claude']);
+  await expect(later).toBeFocused();
+  await expect(page.locator('#providerOrderStatus')).toHaveText('Bing moved to position 3 of 6.');
+  await page.keyboard.press('Enter');
+  expect(await providerOrder(page)).toEqual(['google', 'duck', 'perplexity', 'bing', 'chatgpt', 'claude']);
+  await earlier.focus(); await page.keyboard.press('Space');
+  await page.keyboard.press('Space'); await page.keyboard.press('Space');
+  expect(await providerOrder(page)).toEqual(['bing', 'google', 'duck', 'perplexity', 'chatgpt', 'claude']);
+  // At the first position Move earlier is disabled and focus returns to the grip.
+  await expect(earlier).toBeDisabled(); await expect(handle).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(handle).toHaveAttribute('aria-expanded', 'false'); await expect(earlier).toBeHidden();
+  // Arrow keys on the grip move the box without opening the menu.
+  await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowDown');
+  expect(await providerOrder(page)).toEqual(['google', 'duck', 'bing', 'perplexity', 'chatgpt', 'claude']);
+  await expect(handle).toBeFocused();
+  await page.keyboard.press('ArrowLeft'); await page.keyboard.press('ArrowUp'); await page.keyboard.press('ArrowUp');
+  expect(await providerOrder(page)).toEqual(['bing', 'google', 'duck', 'perplexity', 'chatgpt', 'claude']);
+  await expect(page.locator('#bingForm input[type=text]')).toHaveValue('typed in Bing');
+  expect(await page.evaluate(() => getSettings().providerOrder)).toEqual(['bing', 'google', 'duck', 'perplexity', 'chatgpt', 'claude']);
+  await page.reload();
+  expect(await providerOrder(page)).toEqual(['bing', 'google', 'duck', 'perplexity', 'chatgpt', 'claude']);
+  // With the AI providers hidden, a move swaps the two visible boxes and the hidden ones keep their places.
+  await page.evaluate(() => { setSettings({...getSettings(), showExtraSearch: 'no', providerOrder: ['duck', 'google', 'perplexity', 'bing', 'chatgpt', 'claude']}); render(); });
+  await expect(page.locator('#providerGrid .search:visible')).toHaveCount(2);
+  await page.locator('#googleForm .drag-handle').focus(); await page.keyboard.press('ArrowRight');
+  expect(await providerOrder(page)).toEqual(['duck', 'bing', 'perplexity', 'google', 'chatgpt', 'claude']);
+  await expect(page.locator('#providerOrderStatus')).toHaveText('Google moved to position 2 of 2.');
+  expect(await saved(page)).toEqual(links);
+});
+
+test('provider order travels in backups; older backups, unknown ids and invalid values are handled', async ({page}) => {
+  await setup(page);
+  const alerts = []; page.on('dialog', dialog => { alerts.push(dialog.message()); dialog.accept(); });
+  const importBackup = backup => page.locator('#importFile').setInputFiles({name: 'backup.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup))});
+  // Existing settings and backups without an order: the default order, with the first four boxes where they always were.
+  expect(await providerOrder(page)).toEqual(DEFAULT_PROVIDERS);
+  await importBackup({links, settings: {mode: 'none', color: '#123456', maxTiles: 6, colsMax: 3}});
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-color', 'rgb(18, 52, 86)');
+  expect(await providerOrder(page)).toEqual(DEFAULT_PROVIDERS);
+  // Export carries the order; importing it elsewhere restores it.
+  await page.evaluate(() => { setSettings({...getSettings(), providerOrder: ['claude', 'chatgpt', 'google', 'bing', 'duck', 'perplexity']}); render(); });
+  expect(await providerOrder(page)).toEqual(['claude', 'chatgpt', 'google', 'bing', 'duck', 'perplexity']);
+  const downloadPromise = page.waitForEvent('download'); await page.locator('#exportBtn').click();
+  const file = await (await downloadPromise).path();
+  const backup = JSON.parse(require('node:fs').readFileSync(file, 'utf8'));
+  expect(backup.settings.providerOrder).toEqual(['claude', 'chatgpt', 'google', 'bing', 'duck', 'perplexity']);
+  expect(backup.links).toEqual(links);
+  await page.evaluate(() => { const st = getSettings(); delete st.providerOrder; setSettings(st); setLinks([]); render(); });
+  expect(await providerOrder(page)).toEqual(DEFAULT_PROVIDERS);
+  await page.locator('#importFile').setInputFiles(file);
+  await expect.poll(() => providerOrder(page)).toEqual(['claude', 'chatgpt', 'google', 'bing', 'duck', 'perplexity']);
+  expect(await saved(page)).toEqual(links);
+  await page.reload();
+  expect(await providerOrder(page)).toEqual(['claude', 'chatgpt', 'google', 'bing', 'duck', 'perplexity']);
+  // An order saved before a provider existed, with an unknown id and a duplicate: known ids keep their order and the rest follow.
+  await importBackup({links, settings: {providerOrder: ['perplexity', 'retired-engine', 'google', 'perplexity']}});
+  await expect.poll(() => providerOrder(page)).toEqual(['perplexity', 'google', 'bing', 'duck', 'chatgpt', 'claude']);
+  expect(alerts).toEqual([]);
+  // A malformed order is rejected and nothing changes.
+  const before = await page.evaluate(() => localStorage.getItem('startpage.settings.v1'));
+  for (const providerOrder of ['google,bing', [1, 2], {google: 0}]) await importBackup({links: [], settings: {providerOrder}});
+  await expect.poll(() => alerts.length).toBe(3);
+  expect(await page.evaluate(() => localStorage.getItem('startpage.settings.v1'))).toBe(before);
+  expect(await providerOrder(page)).toEqual(['perplexity', 'google', 'bing', 'duck', 'chatgpt', 'claude']);
+  expect(await saved(page)).toEqual(links);
 });

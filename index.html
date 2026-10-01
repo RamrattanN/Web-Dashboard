@@ -85,12 +85,30 @@
     .header-action:focus-visible{ outline: 4px solid var(--white); outline-offset: 3px; }
     .header-action[hidden]{ display: none; }
 
-    .search-area{ display: grid; gap: 12px; justify-items: center; padding: 24px 2vw 0; }
-    .search-bar, .search-row-2{ width: min(1200px, 100%); display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    /* Breathing room between the header and the search boxes; it shrinks on short or narrow screens. */
+    .search-area{ display: grid; gap: 12px; justify-items: center; padding: clamp(24px, 10vh, 120px) 2vw 0; }
+    .search-grid{ width: min(1200px, 100%); display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .search-grid.primary-only .search.secondary{ display: none; }
     .search{
-      display: grid; grid-template-columns: auto 1fr auto auto auto; align-items: center; gap: 6px; min-width: 0; padding: 8px 10px;
+      position: relative; display: flex; align-items: center; gap: 6px; min-width: 0; padding: 8px 10px 8px 6px;
       border: 2px solid var(--line); border-radius: 16px; background: var(--white); box-shadow: var(--shadow);
     }
+    .search > input{ flex: 1 1 0; }
+    .search:hover{ z-index: 4; }
+    .search:focus-within, .search.menu-open{ z-index: 5; }
+    .search.reordering{ z-index: 6; border-style: dashed; border-color: var(--blue); background: var(--blue-pale); box-shadow: var(--shadow-raised); }
+    .search .drag-handle{ width: 28px; flex: none; color: var(--muted); cursor: grab; touch-action: none; }
+    .search .drag-handle:hover, .search.reordering .drag-handle{ color: var(--navy); }
+    .search.reordering .drag-handle{ cursor: grabbing; }
+    .search .drag-handle[data-tip]::after{ right: auto; left: 0; }
+    .search.menu-open .drag-handle[data-tip]::after, .search.reordering [data-tip]::after{ display: none; }
+    .provider-menu{ position: absolute; top: calc(100% + 4px); left: 6px; z-index: 60; min-width: 170px; padding: 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--white); box-shadow: var(--shadow-raised); }
+    .provider-menu[hidden]{ display: none; }
+    .provider-menu button{ display: block; width: 100%; padding: 10px 12px; border: none; border-radius: 8px; background: transparent; color: var(--ink); font: inherit; font-weight: 600; text-align: left; cursor: pointer; }
+    .provider-menu button:hover, .provider-menu button:focus-visible{ background: var(--blue-pale); color: var(--navy); }
+    .provider-menu button:focus-visible{ outline: 2px solid var(--blue); outline-offset: -2px; }
+    .provider-menu button:disabled{ color: var(--muted); opacity: 0.55; cursor: not-allowed; background: transparent; }
+    .sr-only{ position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
     .search:focus-within{ border-color: var(--blue); box-shadow: 0 0 0 4px var(--ring), var(--shadow); }
     .search input{ width: 100%; min-width: 0; border: none; outline: none; background: transparent; padding: 8px; font: inherit; font-size: 1rem; color: var(--ink); }
     .search input::placeholder{ color: var(--muted); opacity: 1; }
@@ -224,8 +242,8 @@
       .header-action .i{ width: 24px; height: 24px; }
       .header-action.with-label{ padding: 0 8px; }
       .header-action.with-label span{ display: none; }
-      .search-area{ padding-top: 16px; }
-      .search-bar, .search-row-2{ grid-template-columns: 1fr; }
+      .search-area{ padding-top: clamp(16px, 4vh, 40px); }
+      .search-grid{ grid-template-columns: 1fr; }
       .tip{ border-radius: 14px; }
     }
     @media (max-width: 1100px){
@@ -254,6 +272,7 @@
     <symbol id="i-copy" viewBox="0 0 64 64"><rect x="22" y="20" width="32" height="36" rx="6"/><path d="M42 20v-6a6 6 0 0 0-6-6H16a6 6 0 0 0-6 6v24a6 6 0 0 0 6 6h6"/></symbol>
     <symbol id="i-open" viewBox="0 0 64 64"><path d="M27 13H14a5 5 0 0 0-5 5v32a5 5 0 0 0 5 5h32a5 5 0 0 0 5-5V37"/><path d="M38 9h17v17M55 9 30 34"/></symbol>
     <symbol id="i-refresh" viewBox="0 0 64 64"><path d="M52 21a22 22 0 0 0-39 5M12 43a22 22 0 0 0 39-5"/><path d="M53 8v13H40M11 56V43h13"/></symbol>
+    <symbol id="i-grip" viewBox="0 0 64 64"><circle cx="23" cy="14" r="3.5"/><circle cx="41" cy="14" r="3.5"/><circle cx="23" cy="32" r="3.5"/><circle cx="41" cy="32" r="3.5"/><circle cx="23" cy="50" r="3.5"/><circle cx="41" cy="50" r="3.5"/></symbol>
     <symbol id="i-more" viewBox="0 0 64 64"><circle cx="32" cy="13" r="3.5"/><circle cx="32" cy="32" r="3.5"/><circle cx="32" cy="51" r="3.5"/></symbol>
   </svg>
 
@@ -276,45 +295,60 @@
     </header>
 
     <section class="search-area" aria-label="Search">
-      <div class="search-bar">
-        <form class="search" id="googleForm" action="https://www.google.com/search" method="GET">
+      <!-- Six provider boxes. Their order is saved in settings and can be changed with each box's grip. -->
+      <div class="search-grid" id="providerGrid">
+        <form class="search" id="googleForm" data-provider="google" data-kind="search" data-name="Google" action="https://www.google.com/search" method="GET" target="_blank" rel="noopener">
           <span class="engine">Google</span>
-          <input name="q" type="text" placeholder="Search Google" aria-label="Search Google" autocomplete="off" />
-          <button class="icon-btn" type="button" aria-label="Voice search" data-tip="Voice search" id="gMic"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></button>
+          <input name="q" type="text" placeholder="Search Google" aria-label="Search Google" aria-describedby="providerStatus" autocomplete="off" />
+          <button class="icon-btn mic" type="button" aria-label="Voice search" data-tip="Voice search" id="gMic"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></button>
           <button class="icon-btn" type="button" aria-label="Search by image" data-tip="Search by image" id="gImg"><svg class="i" aria-hidden="true"><use href="#i-image"/></svg></button>
           <button class="icon-btn" type="button" aria-label="AI companion" data-tip="AI companion" id="gAI"><svg class="i" aria-hidden="true"><use href="#i-ai"/></svg></button>
         </form>
 
-        <form class="search" id="bingForm" action="https://www.bing.com/search" method="GET">
+        <form class="search" id="bingForm" data-provider="bing" data-kind="search" data-name="Bing" action="https://www.bing.com/search" method="GET" target="_blank" rel="noopener">
           <span class="engine">Bing</span>
-          <input name="q" type="text" placeholder="Search Bing" aria-label="Search Bing" autocomplete="off" />
-          <button class="icon-btn" type="button" aria-label="Voice search" data-tip="Voice search" id="bMic"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></button>
+          <input name="q" type="text" placeholder="Search Bing" aria-label="Search Bing" aria-describedby="providerStatus" autocomplete="off" />
+          <button class="icon-btn mic" type="button" aria-label="Voice search" data-tip="Voice search" id="bMic"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></button>
           <button class="icon-btn" type="button" aria-label="Search by image" data-tip="Search by image" id="bImg"><svg class="i" aria-hidden="true"><use href="#i-image"/></svg></button>
           <button class="icon-btn" type="button" aria-label="AI companion" data-tip="AI companion" id="bAI"><svg class="i" aria-hidden="true"><use href="#i-ai"/></svg></button>
         </form>
-      </div>
 
-      <div class="search-row-2">
-        <form class="search" id="duckForm" action="https://duck.ai/" method="GET" target="_blank">
+        <form class="search secondary" id="duckForm" data-provider="duck" data-kind="copy" data-name="Duck.ai" data-url="https://duck.ai/" action="https://duck.ai/" method="GET" target="_blank">
           <span class="engine">Duck.ai</span>
-          <input id="duckPrompt" type="text" placeholder="Prompt to copy for Duck.ai" aria-label="Prompt to copy for Duck.ai" aria-describedby="duckStatus" autocomplete="off" />
-          <button class="icon-btn" type="button" aria-label="Voice input" data-tip="Voice input" id="dMic"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></button>
+          <input id="duckPrompt" type="text" placeholder="Prompt to copy for Duck.ai" aria-label="Prompt to copy for Duck.ai" aria-describedby="providerStatus" autocomplete="off" />
+          <button class="icon-btn mic" type="button" aria-label="Voice input" data-tip="Voice input" id="dMic"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></button>
           <button class="action-btn" type="submit" aria-label="Copy prompt and open Duck.ai" data-tip="Copy prompt and open Duck.ai" id="duckCopyOpen"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy &amp; open</span></button>
           <a class="icon-btn" id="duckOpen" href="https://duck.ai/" target="_blank" rel="noopener" aria-label="Open Duck.ai without a prompt" data-tip="Open Duck.ai without a prompt"><svg class="i" aria-hidden="true"><use href="#i-open"/></svg></a>
         </form>
 
-        <form class="search" id="pxForm" action="https://www.perplexity.ai/search" method="GET" target="_blank">
+        <form class="search secondary" id="pxForm" data-provider="perplexity" data-kind="search" data-name="Perplexity" data-url="https://www.perplexity.ai/" action="https://www.perplexity.ai/search" method="GET" target="_blank" rel="noopener">
           <span class="engine">Perplexity</span>
-          <input name="q" type="text" placeholder="Ask Perplexity" aria-label="Ask Perplexity" autocomplete="off" />
-          <button class="icon-btn" type="button" aria-label="Voice input" data-tip="Voice input" id="pMic"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></button>
-          <button class="icon-btn" type="button" aria-label="Image search not supported" data-tip="Image search not supported" disabled><svg class="i" aria-hidden="true"><use href="#i-image"/></svg></button>
-          <button class="icon-btn" type="button" aria-label="AI companion already on" data-tip="AI companion already on" disabled><svg class="i" aria-hidden="true"><use href="#i-ai"/></svg></button>
+          <input name="q" type="text" placeholder="Ask Perplexity" aria-label="Ask Perplexity" aria-describedby="providerStatus" autocomplete="off" />
+          <button class="icon-btn mic" type="button" aria-label="Voice input" data-tip="Voice input" id="pMic"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></button>
+          <a class="icon-btn" id="pxOpen" href="https://www.perplexity.ai/" target="_blank" rel="noopener" aria-label="Open Perplexity without a question" data-tip="Open Perplexity without a question"><svg class="i" aria-hidden="true"><use href="#i-open"/></svg></a>
+        </form>
+
+        <form class="search secondary" id="chatgptForm" data-provider="chatgpt" data-kind="copy" data-name="ChatGPT" data-url="https://chatgpt.com/" action="https://chatgpt.com/" method="GET" target="_blank">
+          <span class="engine">ChatGPT</span>
+          <input id="chatgptPrompt" type="text" placeholder="Prompt to copy for ChatGPT" aria-label="Prompt to copy for ChatGPT" aria-describedby="providerStatus" autocomplete="off" />
+          <button class="icon-btn mic" type="button" aria-label="Voice input" data-tip="Voice input" id="cMic"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></button>
+          <button class="action-btn" type="submit" aria-label="Copy prompt and open ChatGPT" data-tip="Copy prompt and open ChatGPT" id="chatgptCopyOpen"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy &amp; open</span></button>
+          <a class="icon-btn" id="chatgptOpen" href="https://chatgpt.com/" target="_blank" rel="noopener" aria-label="Open ChatGPT without a prompt" data-tip="Open ChatGPT without a prompt"><svg class="i" aria-hidden="true"><use href="#i-open"/></svg></a>
+        </form>
+
+        <form class="search secondary" id="claudeForm" data-provider="claude" data-kind="copy" data-name="Claude" data-url="https://claude.ai/new" action="https://claude.ai/new" method="GET" target="_blank">
+          <span class="engine">Claude</span>
+          <input id="claudePrompt" type="text" placeholder="Prompt to copy for Claude" aria-label="Prompt to copy for Claude" aria-describedby="providerStatus" autocomplete="off" />
+          <button class="icon-btn mic" type="button" aria-label="Voice input" data-tip="Voice input" id="aMic"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></button>
+          <button class="action-btn" type="submit" aria-label="Copy prompt and open Claude" data-tip="Copy prompt and open Claude" id="claudeCopyOpen"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy &amp; open</span></button>
+          <a class="icon-btn" id="claudeOpen" href="https://claude.ai/new" target="_blank" rel="noopener" aria-label="Open Claude without a prompt" data-tip="Open Claude without a prompt"><svg class="i" aria-hidden="true"><use href="#i-open"/></svg></a>
         </form>
       </div>
 
-      <p class="search-status" id="duckStatus" role="status" aria-live="polite" hidden></p>
+      <p class="search-status" id="providerStatus" role="status" aria-live="polite" hidden></p>
+      <p class="sr-only" id="providerOrderStatus" role="status" aria-live="polite"></p>
       <p class="search-status error" id="wallpaperStatus" role="status" aria-live="polite" hidden><span>Picsum could not supply a picture. The current background is kept.</span><button class="action-btn" type="button" id="wallpaperRetry">Try again</button></p>
-      <p class="tip">Tip: press Enter to search.  Drag to reorder.  Use the ⋮ on hover or right click for actions.</p>
+      <p class="tip">Tip: press Enter to search.  Drag tiles to reorder them, and search boxes by their grip.  Use the ⋮ on hover or right click for tile actions.</p>
     </section>
 
     <main>
@@ -389,7 +423,7 @@
             <input id="defaultGroup" type="text" placeholder="All" />
           </div>
           <div class="field">
-            <label for="showExtraSearch">Show secondary search row</label>
+            <label for="showExtraSearch">Show AI providers (Duck.ai, Perplexity, ChatGPT, Claude)</label>
             <select id="showExtraSearch">
               <option value="yes">Yes</option>
               <option value="no">No</option>
@@ -493,6 +527,7 @@
         const APP_NAME='WebDashboard';
         const VERSION='v1.5.0-dev';
     const grid = document.getElementById('grid');
+    const providerGrid = document.getElementById('providerGrid');
     const groupBar = document.getElementById('groupBar');
     const logo = document.getElementById('logo');
 
@@ -577,7 +612,8 @@
       filtered.slice(0, Number(st.maxTiles||60)).forEach((item) => grid.appendChild(cardEl(item, links.indexOf(item))));
 
       applyWallpaper();
-      document.querySelector('.search-row-2').style.display = st.showExtraSearch === 'yes' ? '' : 'none';
+      providerGrid.classList.toggle('primary-only', st.showExtraSearch !== 'yes');
+      applyProviderOrder(st);
 
       wirePointerDnD();
     }
@@ -821,6 +857,7 @@
         for (const key of ['maxTiles','colsMax','tileWidth']){
           if (st[key] !== undefined && (!Number.isFinite(st[key]) || st[key] < 1)) throw new Error('Invalid setting: ' + key);
         }
+        if (st.providerOrder !== undefined && !(Array.isArray(st.providerOrder) && st.providerOrder.every(id => typeof id === 'string'))) throw new Error('Invalid setting: providerOrder');
         if (st.savedValues !== undefined && (!st.savedValues || typeof st.savedValues !== 'object' || Array.isArray(st.savedValues) ||
             !Object.values(st.savedValues).every(value => typeof value === 'string'))) throw new Error('Invalid setting: savedValues');
       }
@@ -947,48 +984,173 @@
     function enableImage(button, engine){ const targets = { google: 'https://lens.google.com/search?p=AiAB', bing: 'https://www.bing.com/visualsearch' }; button.onclick = () => { const u = targets[engine]; if(u) window.open(u, '_blank'); }; }
 
     function qs(sel){ return document.querySelector(sel); }
-    enableMic(qs('#gMic'), qs('#googleForm input[name=q]'));
-    enableMic(qs('#bMic'), qs('#bingForm input[name=q]'));
-    enableMic(qs('#dMic'), qs('#duckPrompt'));
-    enableMic(qs('#pMic'), qs('#pxForm input[name=q]'));
     enableImage(qs('#gImg'), 'google');
     enableImage(qs('#bImg'), 'bing');
     ['g','b'].forEach(prefix => { const btn = qs(`#${prefix}AI`); const form = prefix==='g'?qs('#googleForm'):qs('#bingForm'); const input = form.querySelector('input[name=q]'); btn.onclick = () => launchAICompanion(input.value); });
 
-    // Duck.ai has no verified way to receive a prompt through its address, so the prompt is copied for pasting.
-    const DUCK_AI_URL = 'https://duck.ai/';
-    const duckPrompt = qs('#duckPrompt');
-    const duckStatus = qs('#duckStatus');
-    function showDuckStatus(message, isError){
-      duckStatus.textContent = message;
-      duckStatus.classList.toggle('error', !!isError);
-      duckStatus.hidden = false;
+    const providerForms = Array.from(providerGrid.querySelectorAll('.search'));
+    const providerStatus = qs('#providerStatus');
+    function showProviderStatus(message, isError){
+      providerStatus.textContent = message;
+      providerStatus.classList.toggle('error', !!isError);
+      providerStatus.hidden = false;
     }
     async function copyText(text, field){
       try { if (navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(text); return true; } } catch {}
       try { field.focus(); field.select(); return document.execCommand('copy'); } catch { return false; }
     }
-    qs('#duckForm').onsubmit = async (e) => {
-      e.preventDefault();
-      const prompt = duckPrompt.value.trim();
-      if (!prompt){
-        showDuckStatus('Type a prompt first, or use Open Duck.ai to start an empty chat.', true);
-        duckPrompt.focus();
+    providerForms.forEach(form => {
+      const { kind, name, url } = form.dataset;
+      const input = form.querySelector('input[type="text"]');
+      enableMic(form.querySelector('.mic'), input);
+      if (kind === 'search'){
+        // Google, Bing and Perplexity: the browser submits the form to a new tab and encodes the query itself.
+        form.onsubmit = (e) => {
+          if (input.value.trim()){ providerStatus.hidden = true; return; }
+          e.preventDefault();
+          showProviderStatus(url ? `Type a question for ${name} first, or use Open ${name}.` : `Type a search for ${name} first.`, true);
+          input.focus();
+        };
         return;
       }
-      if (!(await copyText(prompt, duckPrompt))){
-        duckPrompt.focus(); duckPrompt.select();
-        showDuckStatus('Could not copy the prompt. It is still in the box: copy it yourself, then use Open Duck.ai and paste it there.', true);
-        return;
-      }
-      const tab = window.open(DUCK_AI_URL, '_blank');
-      if (!tab){
-        showDuckStatus('Prompt copied, but the browser blocked the new tab. Use Open Duck.ai, then paste the prompt there.', true);
-        return;
-      }
-      try { tab.opener = null; } catch {}
-      showDuckStatus('Prompt copied and Duck.ai opened in a new tab. Paste the prompt there. Duck.ai may show a welcome screen first.');
-    };
+      // Duck.ai, ChatGPT and Claude: no verified way to pass a prompt in the address, so it is copied for pasting.
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        const prompt = input.value.trim();
+        if (!prompt){
+          showProviderStatus(`Type a prompt first, or use Open ${name} to start an empty chat.`, true);
+          input.focus();
+          return;
+        }
+        if (!(await copyText(prompt, input))){
+          input.focus(); input.select();
+          showProviderStatus(`Could not copy the prompt. It is still in the box: copy it yourself, then use Open ${name} and paste it there.`, true);
+          return;
+        }
+        const tab = window.open(url, '_blank');
+        if (!tab){
+          showProviderStatus(`Prompt copied, but the browser blocked the new tab. Use Open ${name}, then paste the prompt there.`, true);
+          return;
+        }
+        try { tab.opener = null; } catch {}
+        showProviderStatus(`Prompt copied and ${name} opened in a new tab. Paste the prompt there. ${name} may show a welcome or sign-in screen first.`);
+      };
+    });
+
+    // Provider order. Separate from tile order: it is stored as settings.providerOrder and never touches the links.
+    const PROVIDER_IDS = providerForms.map(form => form.dataset.provider);
+    const providerForm = id => providerForms.find(form => form.dataset.provider === id);
+    const providerDomOrder = () => Array.from(providerGrid.querySelectorAll('.search')).map(form => form.dataset.provider);
+    // Saved ids first, in their saved order; unknown ids are ignored and providers missing from older settings follow in default order.
+    function providerOrder(st){
+      const saved = Array.isArray(st.providerOrder) ? st.providerOrder.filter((id, i, all) => PROVIDER_IDS.includes(id) && all.indexOf(id) === i) : [];
+      return [...saved, ...PROVIDER_IDS.filter(id => !saved.includes(id))];
+    }
+    let providerDrag = null;
+    function placeProviders(order){
+      if (order.join() === providerDomOrder().join()) return;
+      const focused = providerGrid.contains(document.activeElement) ? document.activeElement : null;
+      order.forEach(id => providerGrid.appendChild(providerForm(id))); // moving a box keeps whatever is typed in it
+      if (focused) focused.focus();
+    }
+    function applyProviderOrder(st){ if (!providerDrag) placeProviders(providerOrder(st)); }
+    function saveProviderOrder(order){
+      placeProviders(order);
+      const st = getSettings(); st.providerOrder = order; setSettings(st);
+      providerForms.forEach(updateProviderMenu);
+    }
+    const providerShown = form => form.offsetParent !== null;
+    function closeProviderMenus(except){
+      providerForms.forEach(form => { if (form === except) return; form.querySelector('.provider-menu').hidden = true; form.classList.remove('menu-open'); form.querySelector('.drag-handle').setAttribute('aria-expanded', 'false'); });
+    }
+    function updateProviderMenu(form){
+      const shown = providerDomOrder().filter(id => providerShown(providerForm(id)));
+      const at = shown.indexOf(form.dataset.provider);
+      const [earlier, later] = form.querySelectorAll('.provider-menu button');
+      earlier.disabled = at <= 0; later.disabled = at < 0 || at >= shown.length - 1;
+    }
+    // Swaps a box with its visible neighbour, so hidden boxes keep their places.
+    function moveProvider(id, direction){
+      const order = providerDomOrder();
+      const shown = order.filter(other => providerShown(providerForm(other)));
+      const from = shown.indexOf(id), to = from + direction;
+      if (from < 0 || to < 0 || to >= shown.length) return false;
+      const a = order.indexOf(id), b = order.indexOf(shown[to]);
+      [order[a], order[b]] = [order[b], order[a]];
+      saveProviderOrder(order);
+      qs('#providerOrderStatus').textContent = `${providerForm(id).dataset.name} moved to position ${to + 1} of ${shown.length}.`;
+      return true;
+    }
+    providerForms.forEach(form => {
+      const { provider: id, name } = form.dataset;
+      const handle = document.createElement('button');
+      handle.type = 'button'; handle.className = 'icon-btn drag-handle';
+      handle.setAttribute('aria-label', `Reorder the ${name} box`);
+      handle.setAttribute('aria-haspopup', 'true'); handle.setAttribute('aria-expanded', 'false');
+      handle.dataset.tip = 'Drag to reorder, or press Enter for move options';
+      handle.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-grip"/></svg>';
+      const menu = document.createElement('div');
+      menu.className = 'provider-menu'; menu.hidden = true;
+      menu.setAttribute('role', 'group'); menu.setAttribute('aria-label', `Move the ${name} box`);
+      [['Move earlier', -1], ['Move later', 1]].forEach(([label, direction]) => {
+        const button = document.createElement('button');
+        button.type = 'button'; button.textContent = label;
+        button.onclick = () => { moveProvider(id, direction); (button.disabled ? handle : button).focus(); };
+        menu.appendChild(button);
+      });
+      form.prepend(handle); form.appendChild(menu);
+
+      let suppressClick = false;
+      handle.onclick = () => {
+        if (suppressClick){ suppressClick = false; return; }
+        const open = menu.hidden;
+        closeProviderMenus(form);
+        updateProviderMenu(form);
+        menu.hidden = !open; form.classList.toggle('menu-open', open); handle.setAttribute('aria-expanded', String(open));
+      };
+      handle.onkeydown = (e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp'){ e.preventDefault(); moveProvider(id, -1); handle.focus(); }
+        else if (e.key === 'ArrowRight' || e.key === 'ArrowDown'){ e.preventDefault(); moveProvider(id, 1); handle.focus(); }
+      };
+      form.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menu.hidden){ closeProviderMenus(); handle.focus(); } });
+
+      // Dragging starts only on the grip, so typing, selecting text and the other controls are unaffected.
+      // The preview uses CSS order; the boxes themselves move once, on drop.
+      const preview = order => providerForms.forEach(other => { other.style.order = order ? order.indexOf(other.dataset.provider) : ''; });
+      const finish = (commit) => {
+        if (!providerDrag) return;
+        const { order, started, pointerId } = providerDrag;
+        providerDrag = null;
+        if (handle.hasPointerCapture(pointerId)) handle.releasePointerCapture(pointerId);
+        form.classList.remove('reordering');
+        preview(null);
+        if (commit && started) saveProviderOrder(order);
+        setTimeout(() => { suppressClick = false; }, 0); // only the click that ends this drag is ignored
+      };
+      handle.onpointerdown = (e) => {
+        if (e.button !== 0 || providerDrag) return;
+        providerDrag = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, started: false, order: providerDomOrder() };
+        handle.setPointerCapture(e.pointerId);
+      };
+      handle.onpointermove = (e) => {
+        if (!providerDrag || e.pointerId !== providerDrag.pointerId) return;
+        if (!providerDrag.started){
+          if (Math.abs(e.clientX - providerDrag.x) + Math.abs(e.clientY - providerDrag.y) <= TAP_THRESHOLD) return;
+          providerDrag.started = true; suppressClick = true;
+          closeProviderMenus(); form.classList.add('reordering');
+        }
+        const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.search');
+        if (!over || over === form || over.parentNode !== providerGrid) return;
+        const order = providerDrag.order.filter(other => other !== id);
+        order.splice(providerDrag.order.indexOf(over.dataset.provider), 0, id);
+        providerDrag.order = order;
+        preview(order);
+      };
+      handle.onpointerup = (e) => { if (providerDrag && e.pointerId === providerDrag.pointerId) finish(true); };
+      handle.onpointercancel = (e) => { if (providerDrag && e.pointerId === providerDrag.pointerId) finish(false); };
+      handle.onlostpointercapture = () => finish(false);
+    });
+    document.addEventListener('click', (e) => { if (!e.target.closest('.drag-handle, .provider-menu')) closeProviderMenus(); });
 
     logo.addEventListener('keydown', (e) => { if (e.key === 'Enter'){ e.preventDefault(); logo.blur(); } if (e.key === 'Escape'){ e.preventDefault(); const st=getSettings(); logo.textContent = st.title || 'Dashboard'; logo.blur(); } });
     logo.addEventListener('blur', () => { const st = getSettings(); st.title = logo.textContent.trim() || 'Dashboard'; setSettings(st); logo.textContent = st.title; });

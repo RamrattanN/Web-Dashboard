@@ -361,3 +361,38 @@ on narrow screens. No control or behaviour changed.
 | For all six paired fields in Settings: control tops and bottoms level at desktop width with the wallpaper label wrapping to two lines, no label clipped, fields stacked at phone width | CI assertion (Linux Chromium) | Layout arithmetic in that browser and font |
 | Desktop and phone screenshots of the Wallpaper group | Agent inspection of the CI screenshots | Linux Chromium rendering, not the owner's Mac |
 | The alignment adjustment looks correct | Owner, Chrome on macOS, Dashboard Test profile, at `814a2cd`, 2026-10-01 | A visual confirmation of the adjustment as a whole. The owner did not report results for individual checklist steps |
+
+## Search section: six providers, new tabs and reordering — implemented, owner acceptance pending
+
+Added after every acceptance above; none of them covers it. The Duck.ai row
+accepted at `327ff8c` keeps its behaviour and wording, with the provider name
+now inserted by shared code.
+
+Prompt-transfer findings (2026-10-01):
+
+| Provider | Finding | Source | Result |
+| --- | --- | --- | --- |
+| Google, Bing | Standard `?q=` search address | Long-standing public behaviour; not re-verified in a browser here | Form opens a new tab; the browser encodes the query |
+| Perplexity | `perplexity.ai/search?q=` answers with a redirect to `/search/new?q=` that keeps the query | Agent request with curl; previously in use on this dashboard | Unchanged, now with an Open link |
+| Duck.ai | No address parameter documented by DuckDuckGo; `!ai` route failed in the owner's Chrome | DuckDuckGo help pages; owner test | Copy & open |
+| ChatGPT | OpenAI's help documents its browser extension for address-bar search. `chatgpt.com/?q=` appears only in third-party articles and community posts, which also report it changing. The official article could not be fetched directly (HTTP 403), so its contents were read from search results | Web search, 2026-10-01 | Treated as unverified: Copy & open |
+| Claude | Anthropic documents `claude://claude.ai/new?q=` for the Claude Desktop app, prefilled and not sent. No web address is documented; third-party reports say `claude.ai/new?q=` no longer works | Claude support article "Open Claude Desktop with a link"; web search | Copy & open to `https://claude.ai/new`. The desktop link is not used: it needs the app installed and the page cannot tell whether it opened |
+
+Behaviour: six boxes in a two-column grid (one column under 760px), with
+`clamp(24px, 10vh, 120px)` of space under the header. Search boxes are
+ordinary forms with `target="_blank"`; copy boxes have no named field, so a
+form submission cannot carry their text. Order is stored as
+`settings.providerOrder`; unknown ids are ignored and missing providers
+follow in default order. The grip is the only drag start. `showExtraSearch`
+hides the four AI providers.
+
+| Evidence | Source | What it does and does not show |
+| --- | --- | --- |
+| Google, Bing and Perplexity open a new tab whose `q` decodes to exactly what was typed, for spaces, accented and CJK text, emoji and punctuation; the dashboard URL and input are unchanged; blank input opens nothing | CI (Linux Chromium) with the destination sites intercepted | What the dashboard sends. Not how the sites respond |
+| Duck.ai, ChatGPT and Claude: copy and open, copy refusal, blocked tab, empty input, typed text kept, no named field, no request to the provider | CI with the clipboard and `window.open` replaced | The dashboard's logic only |
+| Reorder by grip forwards and backwards across rows; no reorder from the input, label or other controls; text selection in the input works; typed text preserved; cancelled drag restores; reload persistence; tile order untouched | CI with real mouse input | |
+| Move earlier / Move later menu, arrow keys, disabled ends, focus kept, announcements, hidden providers keep their places | CI with real keyboard input | |
+| Backups: order exported and imported; backups without an order; unknown and duplicate ids; malformed values rejected | CI | |
+| Six boxes, 80–120px of room at desktop and tablet sizes and 16–40px on a phone, two columns then one, no horizontal overflow, focus indicator on all 47 keyboard stops, grip tooltip, move menu not covered | CI layout assertions | |
+| Appearance of the new layout, grip tooltip and move menu | Agent inspection of the CI screenshots | Linux Chromium, not the owner's Mac |
+| Real providers and the owner's browser: new tabs, encoding as seen by the sites, pasting into ChatGPT and Claude, dragging with a real pointer | **Pending owner acceptance** | |
