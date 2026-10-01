@@ -56,6 +56,15 @@
   https request. A visual-review spec checks overflow, contrast, focus
   indicators, control names and dialog scrolling, and uploads screenshots as
   a CI artifact. Owner visual acceptance on macOS is still pending.
+- Group bar: an explicit **All** button comes first, is highlighted when no
+  filter is set, and clears the filter in one click. Only the selected group
+  is highlighted otherwise; a second click on it still returns to All. A
+  saved filter for a group that no longer exists can now be cleared with All.
+- The DuckDuckGo search row is replaced by **Duck.ai**. No prompt-transfer
+  address is verified, so the row copies the prompt and opens Duck.ai for
+  pasting, keeps the typed text, reports clipboard and blocked-tab failures,
+  and offers a plain Open Duck.ai link. The Perplexity companion button is
+  removed from this row; Google, Bing and Perplexity routing is unchanged.
 
 ## v1.4.7 — 2025-10-13
 ### Added

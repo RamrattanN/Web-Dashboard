@@ -326,3 +326,127 @@ test('saving a local image that exceeds storage shows an error and keeps existin
   expect(await page.evaluate(() => localStorage.getItem('startpage.settings.v1'))).toBe(before);
   await expect(page.locator('#wallpaper')).toHaveCSS('background-image', `url("${pixel}")`);
 });
+
+const grouped = [['Amazon','General'], ['Google News','News'], ['Gmail','Work'], ['Facebook','General'], ['LinkedIn','Work'], ['ChatGPT','Work']].map(([title, group], i) => ({url: `https://example.com/g${i}`, title, group, desc: '', icon: pixel}));
+async function pills(page) { return page.locator('#groupBar .pill').evaluateAll(els => els.map(el => [el.textContent, el.classList.contains('active'), el.getAttribute('aria-pressed')])); }
+test('All group button clears the filter in one click, respects the tile limit, and persists', async ({page}) => {
+  await setup(page, {maxTiles:4});
+  await page.evaluate(grouped => { setLinks(grouped); render(); }, grouped);
+  const titles = () => page.locator('#grid .card .title').allTextContents();
+  const state = active => ['All','General','News','Work'].map(name => [name, name === active, String(name === active)]);
+  expect(await pills(page)).toEqual(state('All'));
+  expect(await titles()).toEqual(['Amazon','Google News','Gmail','Facebook']);
+  const members = {Work:['Gmail','LinkedIn','ChatGPT'], News:['Google News'], General:['Amazon','Facebook']};
+  for (const group of ['Work','News','General']) {
+    await page.getByRole('button', {name:group, exact:true}).click();
+    expect(await pills(page)).toEqual(state(group));
+    expect(await titles()).toEqual(members[group]);
+    await page.reload();
+    expect(await pills(page)).toEqual(state(group));
+    expect(await titles()).toEqual(members[group]);
+    await page.getByRole('button', {name:'All', exact:true}).click();
+    expect(await pills(page)).toEqual(state('All'));
+    expect(await titles()).toEqual(['Amazon','Google News','Gmail','Facebook']);
+    expect(await page.evaluate(() => getSettings().groupFilter)).toBe('All');
+    await page.reload();
+    expect(await pills(page)).toEqual(state('All'));
+    expect(await titles()).toEqual(['Amazon','Google News','Gmail','Facebook']);
+  }
+  // A second click on the selected group still returns to All; clicking All again changes nothing.
+  await page.getByRole('button', {name:'General', exact:true}).click(); await page.getByRole('button', {name:'General', exact:true}).click();
+  expect(await pills(page)).toEqual(state('All'));
+  await page.getByRole('button', {name:'All', exact:true}).click();
+  expect(await pills(page)).toEqual(state('All'));
+  // Dragging inside a filtered group moves only that group's links and keeps every hidden link.
+  await page.getByRole('button', {name:'Work', exact:true}).click();
+  await drag(page,0,2);
+  expect((await saved(page)).map(link => link.title)).toEqual(['Amazon','Google News','LinkedIn','Facebook','ChatGPT','Gmail']);
+  expect(await pills(page)).toEqual(state('Work'));
+  // A saved filter naming a group that no longer exists highlights nothing, and All clears it.
+  await page.evaluate(() => { setSettings({...getSettings(), groupFilter:'Gone'}); render(); });
+  expect((await pills(page)).filter(([, active]) => active)).toEqual([]);
+  await expect(page.locator('#grid .card')).toHaveCount(0);
+  await page.getByRole('button', {name:'All', exact:true}).click();
+  expect(await pills(page)).toEqual(state('All'));
+  await expect(page.locator('#grid .card')).toHaveCount(4);
+});
+
+// Mocked routing: the clipboard and window.open are replaced, so this proves the dashboard's behaviour, not Duck.ai's.
+test('Duck.ai row copies the prompt, opens Duck.ai, keeps the text, and reports failures (mocked)', async ({page}) => {
+  await setup(page);
+  const external = []; page.on('request', request => { if (/duck\.ai|duckduckgo\.com\/\?/.test(request.url())) external.push(request.url()); });
+  await page.evaluate(() => {
+    window.opened = []; window.copied = []; window.openResult = {};
+    window.open = (...args) => { window.opened.push(args); return window.openResult; };
+    Object.defineProperty(navigator, 'clipboard', {configurable:true, value:{writeText: async text => { window.copied.push(text); }}});
+  });
+  const form = page.locator('#duckForm'), prompt = page.locator('#duckPrompt'), status = page.locator('#duckStatus');
+  await expect(form.locator('.engine')).toHaveText('Duck.ai');
+  await expect(prompt).toHaveAttribute('placeholder', 'Prompt to copy for Duck.ai');
+  await expect(page.locator('#duckCopyOpen')).toHaveAccessibleName('Copy prompt and open Duck.ai');
+  await expect(page.locator('#duckOpen')).toHaveAccessibleName('Open Duck.ai without a prompt');
+  await expect(page.locator('#duckOpen')).toHaveAttribute('href', 'https://duck.ai/');
+  await expect(page.locator('#duckOpen')).toHaveAttribute('target', '_blank');
+  expect(await form.evaluate(el => el.innerHTML)).not.toMatch(/Perplexity|DuckDuckGo|name="q"/);
+  await expect(page.locator('#ddgForm, #dAI')).toHaveCount(0);
+  await expect(status).toBeHidden();
+  const snapshot = () => page.evaluate(() => ({opened: window.opened, copied: window.copied}));
+
+  await prompt.fill('plan my week'); await prompt.press('Enter');
+  await expect(status).toHaveText(/Prompt copied and Duck\.ai opened in a new tab\. Paste the prompt there/);
+  await expect(status).not.toHaveClass(/error/);
+  expect(await snapshot()).toEqual({opened:[['https://duck.ai/','_blank']], copied:['plan my week']});
+  await expect(prompt).toHaveValue('plan my week');
+  await page.locator('#duckCopyOpen').click();
+  expect((await snapshot()).opened).toHaveLength(2);
+
+  // Empty prompt: nothing is copied or opened, and the message says so.
+  await prompt.fill('   '); await page.locator('#duckCopyOpen').click();
+  await expect(status).toHaveText(/Type a prompt first/); await expect(status).toHaveClass(/error/);
+  expect((await snapshot()).opened).toHaveLength(2);
+
+  // Popup blocked: the prompt was copied and the message points to the direct link.
+  await page.evaluate(() => { window.openResult = null; });
+  await prompt.fill('blocked tab'); await prompt.press('Enter');
+  await expect(status).toHaveText(/Prompt copied, but the browser blocked the new tab\. Use Open Duck\.ai/);
+  await expect(prompt).toHaveValue('blocked tab');
+
+  // Clipboard failure: Duck.ai is not opened, the text stays selected in the box, and the failure is visible.
+  await page.evaluate(() => {
+    window.openResult = {}; window.opened = [];
+    navigator.clipboard.writeText = async () => { throw new Error('denied'); };
+    document.execCommand = () => false;
+  });
+  await prompt.fill('keep me'); await prompt.press('Enter');
+  await expect(status).toHaveText(/Could not copy the prompt\. It is still in the box/); await expect(status).toHaveClass(/error/);
+  expect((await snapshot()).opened).toEqual([]);
+  await expect(prompt).toHaveValue('keep me');
+  expect(await prompt.evaluate(el => el.value.slice(el.selectionStart, el.selectionEnd))).toBe('keep me');
+  await expect(page.locator('#duckOpen')).toBeVisible();
+
+  // Other providers are routed as before.
+  await expect(page.locator('#googleForm')).toHaveAttribute('action', 'https://www.google.com/search');
+  await expect(page.locator('#bingForm')).toHaveAttribute('action', 'https://www.bing.com/search');
+  await expect(page.locator('#pxForm')).toHaveAttribute('action', 'https://www.perplexity.ai/search');
+  await page.locator('#googleForm input[name=q]').fill('find this'); await page.locator('#gAI').click();
+  expect((await snapshot()).opened).toEqual([['https://www.perplexity.ai/search?q=find%20this','_blank']]);
+  // The secondary row setting still hides the Duck.ai and Perplexity rows.
+  await page.evaluate(() => { setSettings({...getSettings(), showExtraSearch:'no'}); render(); });
+  await expect(form).toBeHidden(); await expect(page.locator('#pxForm')).toBeHidden();
+  expect(external).toEqual([]);
+});
+
+// Real clipboard in Linux Chromium, with only window.open replaced. Not evidence about Duck.ai itself.
+for (const origin of ['file', 'http']) test(`Duck.ai prompt reaches the real clipboard from a ${origin} page`, async ({page}) => {
+  await page.route(/^https:\/\//, route => route.abort());
+  if (origin === 'http') await page.route('http://dashboard.test/**', route => route.fulfill({contentType:'text/html', body:require('node:fs').readFileSync('index.html', 'utf8')}));
+  await page.goto(origin === 'http' ? 'http://dashboard.test/' : url);
+  expect(await page.evaluate(() => window.isSecureContext)).toBe(origin === 'file');
+  await page.evaluate(() => { window.opened = []; window.open = (...args) => { window.opened.push(args); return {}; }; });
+  await page.locator('#duckPrompt').fill(`real clipboard from ${origin}`); await page.locator('#duckPrompt').press('Enter');
+  await expect(page.locator('#duckStatus')).toHaveText(/Prompt copied and Duck\.ai opened/);
+  expect(await page.evaluate(() => window.opened)).toEqual([['https://duck.ai/','_blank']]);
+  const target = page.locator('#googleForm input[name=q]');
+  await target.click(); await page.keyboard.press('ControlOrMeta+V');
+  await expect(target).toHaveValue(`real clipboard from ${origin}`);
+});

@@ -107,6 +107,20 @@
     .icon-btn:focus-visible{ outline: 3px solid var(--blue); outline-offset: 2px; }
     .icon-btn:disabled{ color: var(--muted); opacity: 0.5; cursor: not-allowed; }
     .icon-btn:disabled:hover{ background: transparent; }
+    a.icon-btn{ text-decoration: none; }
+    .action-btn{
+      display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border: 2px solid var(--navy); border-radius: 10px;
+      background: var(--white); color: var(--navy); font: inherit; font-weight: 700; font-size: 0.85rem; white-space: nowrap; cursor: pointer; transition: background-color 150ms ease;
+    }
+    .action-btn .i{ width: 20px; height: 20px; }
+    .action-btn:hover{ background: var(--blue-pale); }
+    .action-btn:focus-visible{ outline: 3px solid var(--blue); outline-offset: 2px; }
+    .search-status{
+      margin: 0; max-width: min(1200px, 100%); padding: 8px 16px; border: 2px solid var(--blue); border-radius: 12px;
+      background: var(--blue-pale); color: var(--navy-deep); font-size: 0.9rem; font-weight: 700; line-height: 1.4; text-align: center;
+    }
+    .search-status.error{ border-color: #a66300; background: #fff6e6; color: #5c3700; }
+    .search-status[hidden]{ display: none; }
 
     main{ display: grid; justify-items: center; align-content: start; padding: 6px 0 48px; }
     .grid-wrap{ width: min(1400px, 96vw); }
@@ -208,6 +222,10 @@
       .search-bar, .search-row-2{ grid-template-columns: 1fr; }
       .tip{ border-radius: 14px; }
     }
+    @media (max-width: 1100px){
+      .action-btn{ width: 36px; padding: 0; justify-content: center; }
+      .action-btn span{ display: none; }
+    }
     @media (max-width: 560px){
       .row{ grid-template-columns: 1fr; }
       .sheet{ padding: 0 16px; }
@@ -227,6 +245,8 @@
     <symbol id="i-mic" viewBox="0 0 64 64"><rect x="23" y="7" width="18" height="30" rx="9"/><path d="M13 30a19 19 0 0 0 38 0M32 49v9M22 58h20"/></symbol>
     <symbol id="i-image" viewBox="0 0 64 64"><rect x="7" y="11" width="50" height="42" rx="6"/><circle cx="23" cy="26" r="5"/><path d="m9 47 14-12 10 9 8-7 14 12"/></symbol>
     <symbol id="i-ai" viewBox="0 0 64 64"><path d="M27 9c2 13 6 17 19 19-13 2-17 6-19 19-2-13-6-17-19-19 13-2 17-6 19-19Z"/><path d="M49 40c1 6 3 8 9 9-6 1-8 3-9 9-1-6-3-8-9-9 6-1 8-3 9-9Z"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 64 64"><rect x="22" y="20" width="32" height="36" rx="6"/><path d="M42 20v-6a6 6 0 0 0-6-6H16a6 6 0 0 0-6 6v24a6 6 0 0 0 6 6h6"/></symbol>
+    <symbol id="i-open" viewBox="0 0 64 64"><path d="M27 13H14a5 5 0 0 0-5 5v32a5 5 0 0 0 5 5h32a5 5 0 0 0 5-5V37"/><path d="M38 9h17v17M55 9 30 34"/></symbol>
     <symbol id="i-more" viewBox="0 0 64 64"><circle cx="32" cy="13" r="3.5"/><circle cx="32" cy="32" r="3.5"/><circle cx="32" cy="51" r="3.5"/></symbol>
   </svg>
 
@@ -267,12 +287,12 @@
       </div>
 
       <div class="search-row-2">
-        <form class="search" id="ddgForm" action="https://duckduckgo.com/" method="GET">
-          <span class="engine">DuckDuckGo</span>
-          <input name="q" type="text" placeholder="Search DuckDuckGo" aria-label="Search DuckDuckGo" autocomplete="off" />
-          <button class="icon-btn" type="button" aria-label="Voice search" data-tip="Voice search" id="dMic"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></button>
-          <button class="icon-btn" type="button" aria-label="Image search not supported here" data-tip="Image search not supported here" disabled><svg class="i" aria-hidden="true"><use href="#i-image"/></svg></button>
-          <button class="icon-btn" type="button" aria-label="AI companion (Perplexity)" data-tip="AI companion (Perplexity)" id="dAI"><svg class="i" aria-hidden="true"><use href="#i-ai"/></svg></button>
+        <form class="search" id="duckForm" action="https://duck.ai/" method="GET" target="_blank">
+          <span class="engine">Duck.ai</span>
+          <input id="duckPrompt" type="text" placeholder="Prompt to copy for Duck.ai" aria-label="Prompt to copy for Duck.ai" aria-describedby="duckStatus" autocomplete="off" />
+          <button class="icon-btn" type="button" aria-label="Voice input" data-tip="Voice input" id="dMic"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></button>
+          <button class="action-btn" type="submit" aria-label="Copy prompt and open Duck.ai" data-tip="Copy prompt and open Duck.ai" id="duckCopyOpen"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy &amp; open</span></button>
+          <a class="icon-btn" id="duckOpen" href="https://duck.ai/" target="_blank" rel="noopener" aria-label="Open Duck.ai without a prompt" data-tip="Open Duck.ai without a prompt"><svg class="i" aria-hidden="true"><use href="#i-open"/></svg></a>
         </form>
 
         <form class="search" id="pxForm" action="https://www.perplexity.ai/search" method="GET" target="_blank">
@@ -284,6 +304,7 @@
         </form>
       </div>
 
+      <p class="search-status" id="duckStatus" role="status" aria-live="polite" hidden></p>
       <p class="tip">Tip: press Enter to search.  Drag to reorder.  Use the ⋮ on hover or right click for actions.</p>
     </section>
 
@@ -533,15 +554,18 @@
 
     function renderGroupBar(links, active){
       const groups = Array.from(new Set(links.map(l => (l.group||'').trim()).filter(Boolean))).sort();
+      const filtered = !!active && active !== 'All';
       groupBar.innerHTML = '';
-      groups.forEach(g => {
+      if (!groups.length && !filtered) return;
+      // "All" comes first and is the selected button whenever no group filter is set.
+      [null, ...groups].forEach(g => {
         const p = document.createElement('button');
-        const isActive = g === active;
+        const isActive = g === null ? !filtered : g === active;
         p.type = 'button';
         p.className = 'pill' + (isActive ? ' active' : '');
         p.setAttribute('aria-pressed', String(isActive));
-        p.textContent = g;
-        p.onclick = () => { const st = getSettings(); st.groupFilter = isActive ? 'All' : g; setSettings(st); render(); };
+        p.textContent = g === null ? 'All' : g;
+        p.onclick = () => { const st = getSettings(); st.groupFilter = (g === null || isActive) ? 'All' : g; setSettings(st); render(); };
         groupBar.appendChild(p);
       });
     }
@@ -846,11 +870,46 @@
     function qs(sel){ return document.querySelector(sel); }
     enableMic(qs('#gMic'), qs('#googleForm input[name=q]'));
     enableMic(qs('#bMic'), qs('#bingForm input[name=q]'));
-    enableMic(qs('#dMic'), qs('#ddgForm input[name=q]'));
+    enableMic(qs('#dMic'), qs('#duckPrompt'));
     enableMic(qs('#pMic'), qs('#pxForm input[name=q]'));
     enableImage(qs('#gImg'), 'google');
     enableImage(qs('#bImg'), 'bing');
-    ['g','b','d'].forEach(prefix => { const btn = qs(`#${prefix}AI`); const form = prefix==='g'?qs('#googleForm'):prefix==='b'?qs('#bingForm'):qs('#ddgForm'); const input = form.querySelector('input[name=q]'); btn.onclick = () => launchAICompanion(input.value); });
+    ['g','b'].forEach(prefix => { const btn = qs(`#${prefix}AI`); const form = prefix==='g'?qs('#googleForm'):qs('#bingForm'); const input = form.querySelector('input[name=q]'); btn.onclick = () => launchAICompanion(input.value); });
+
+    // Duck.ai has no verified way to receive a prompt through its address, so the prompt is copied for pasting.
+    const DUCK_AI_URL = 'https://duck.ai/';
+    const duckPrompt = qs('#duckPrompt');
+    const duckStatus = qs('#duckStatus');
+    function showDuckStatus(message, isError){
+      duckStatus.textContent = message;
+      duckStatus.classList.toggle('error', !!isError);
+      duckStatus.hidden = false;
+    }
+    async function copyText(text, field){
+      try { if (navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(text); return true; } } catch {}
+      try { field.focus(); field.select(); return document.execCommand('copy'); } catch { return false; }
+    }
+    qs('#duckForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const prompt = duckPrompt.value.trim();
+      if (!prompt){
+        showDuckStatus('Type a prompt first, or use Open Duck.ai to start an empty chat.', true);
+        duckPrompt.focus();
+        return;
+      }
+      if (!(await copyText(prompt, duckPrompt))){
+        duckPrompt.focus(); duckPrompt.select();
+        showDuckStatus('Could not copy the prompt. It is still in the box: copy it yourself, then use Open Duck.ai and paste it there.', true);
+        return;
+      }
+      const tab = window.open(DUCK_AI_URL, '_blank');
+      if (!tab){
+        showDuckStatus('Prompt copied, but the browser blocked the new tab. Use Open Duck.ai, then paste the prompt there.', true);
+        return;
+      }
+      try { tab.opener = null; } catch {}
+      showDuckStatus('Prompt copied and Duck.ai opened in a new tab. Paste the prompt there. Duck.ai may show a welcome screen first.');
+    };
 
     logo.addEventListener('keydown', (e) => { if (e.key === 'Enter'){ e.preventDefault(); logo.blur(); } if (e.key === 'Escape'){ e.preventDefault(); const st=getSettings(); logo.textContent = st.title || 'Dashboard'; logo.blur(); } });
     logo.addEventListener('blur', () => { const st = getSettings(); st.title = logo.textContent.trim() || 'Dashboard'; setSettings(st); logo.textContent = st.title; });

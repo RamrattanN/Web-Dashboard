@@ -129,18 +129,47 @@ Evidence, by source:
 
 | Evidence | Source | What it does and does not show |
 | --- | --- | --- |
-| All 28 functional tests still pass on the restyled page | CI (Linux Chromium) | Behaviour is preserved under automation; not a manual Mac re-check |
+| All functional tests still pass on the restyled page (28 at the time of the refresh) | CI (Linux Chromium) | Behaviour is preserved under automation; not a manual Mac re-check |
 | No horizontal overflow and header controls inside the viewport at 1440, 820 and 375 px wide, on pale, dark and image wallpapers | CI assertion | Layout arithmetic only |
 | Text contrast of at least 4.5:1 for tip, tile title and description, group filters (normal and selected), engine labels, placeholders and the header label | CI assertion on computed colours | Measured against each element's own surface, which is opaque, so the wallpaper does not affect it |
-| Every button has an accessible name, no emoji remain in controls, every icon control has a tooltip, and each of the 30 keyboard stops shows a focus indicator | CI assertion | Presence of an outline or ring, not how it looks |
+| Every button has an accessible name, no emoji remain in controls, every icon control has a tooltip, and every keyboard stop shows a focus indicator (30 at the time of the refresh, 32 after the All button and Duck.ai row) | CI assertion | Presence of an outline or ring, not how it looks |
 | Settings and Add link dialogs fit the viewport, scroll, and keep Close/Save on screen with each control focused, at 1440x700 and 375x600 | CI assertion | |
 | Fresh profile gets the pale surface; saved links without saved settings keep the dark default; saved title, colour, filter, lock and tile limit are shown as saved | CI assertion | |
 | Appearance of the header, tiles, hover and menu, selected filter, focus rings, tooltips and both dialogs | Agent inspection of the CI screenshots | Linux Chromium with Liberation Sans standing in for Arial, a synthetic wallpaper, and letter monograms instead of real favicons. Not the owner's Mac, wallpaper or fonts |
 | Tooltip positioning, stacking of the tile menu, reduced-motion rule, narrow-width rules | Code review, partly confirmed by the screenshots | |
 
-Not checked by anyone yet: rendering in Chrome on macOS, the owner's own
-wallpaper and saved tiles, native controls (colour picker, file chooser,
-select menus) on macOS, drag appearance with a real pointer, and Safari.
+The owner has viewed the refreshed dashboard in Chrome on macOS but has not
+given formal visual acceptance. Not yet confirmed by the owner: native
+controls (colour picker, file chooser, select menus), drag appearance with a
+real pointer, narrow-window layout, and Safari.
+
+## Group filter and Duck.ai row — implemented, owner check pending
+
+Added after the visual refresh, at the owner's request.
+
+- **All button.** The group bar starts with All. It is highlighted, with
+  `aria-pressed="true"`, when no filter is set; otherwise only the selected
+  group is. All clears the filter in one click and the tile limit still
+  applies. A second click on the selected group still clears the filter.
+  Stored data is unchanged: the filter is still `groupFilter`, with `All`
+  meaning no filter.
+- **Duck.ai row.** Replaces the DuckDuckGo row. DuckDuckGo documents no
+  address parameter for passing a prompt to Duck.ai, `duckduckgo.com/chat?q=`
+  redirects to `duck.ai/chat` without the text, and the `!ai` route failed the
+  owner's browser test. The row therefore copies the prompt and opens
+  `https://duck.ai/` for pasting. It never sends the typed text in an address.
+
+| Evidence | Source | What it does and does not show |
+| --- | --- | --- |
+| Work to All, News to All and General to All, each with reload; second-click toggle; tile limit; filtered drag keeps every link; stale filter cleared by All | CI (Linux Chromium) | Behaviour under automation |
+| Copy, open, empty prompt, blocked tab and clipboard-failure messages; typed text kept; other providers' routing unchanged; no request made to Duck.ai or DuckDuckGo | CI with the clipboard and `window.open` replaced | The dashboard's own logic. Says nothing about Duck.ai |
+| The prompt reaches the real clipboard and can be pasted, from a `file://` page and from a page served over plain `http` | CI (Linux Chromium, real clipboard, `window.open` replaced) | Copying works in Chromium in both contexts. Not macOS, not Safari |
+| Duck.ai opens in a new tab and accepts the pasted prompt | **Not verified by anyone** | Needs the owner's Mac check |
+
+Known limits: Duck.ai may show a welcome or terms screen before a paste is
+possible; a browser may refuse clipboard access or block the new tab, in
+which case the row says so and the Open Duck.ai link still works; pasting is
+a manual step.
 
 
 ## Exact Mac acceptance steps

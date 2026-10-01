@@ -93,8 +93,14 @@
 
 - Status: Backlog.  Recorded 2026-10-01; none of these block the recovery.
 - Bing daily wallpaper: disabled in Settings until a real Bing image is shown to load in a browser.  Bing blocks the request by CORS; re-enabling needs a verified approach and a separate decision on any proxy or backend.
-- Group filter with no matching group (review finding F5): after an import, or after removing or editing the last tile in the active group, the grid is empty and no pill is shown to clear the filter.  Fall back to All, or show a way to clear it.
+- Group filter with no matching group (review finding F5): after an import, or after removing or editing the last tile in the active group, the grid is empty.  The All button added on 2026-10-01 now clears such a filter in one click.  Still in Backlog: falling back to All automatically.
 - Import of hand-edited backups (review finding F6): numeric settings written as strings, such as `"maxTiles": "3"`, are rejected.  Backups written by the dashboard are unaffected.  Any change must keep validation strict rather than loosen it.
-- Duck.ai search panel: deferred.  Replace the DuckDuckGo panel only once an approach is verified in a browser to carry typed text into Duck.ai.  DuckDuckGo's `!ai` route failed this on 2026-10-01 in Chrome on macOS: `https://duckduckgo.com/?q=%21ai+dashboard+prompt+test+12345` opened ordinary search results, so that route must not be used.  DuckDuckGo search parameters also do not carry over (`duckduckgo.com/chat?q=…` redirects to `duck.ai/chat` without the text).
+- Duck.ai search panel: delivered on 2026-10-01 as a copy-and-open flow (the prompt is copied and Duck.ai opened for pasting), pending the owner's Mac check.  Still in Backlog: passing the prompt to Duck.ai directly, only once an approach is verified in a browser.  DuckDuckGo's `!ai` route failed this on 2026-10-01 in Chrome on macOS (`https://duckduckgo.com/?q=%21ai+dashboard+prompt+test+12345` opened ordinary search results) and must not be used; DuckDuckGo search parameters also do not carry over (`duckduckgo.com/chat?q=…` redirects to `duck.ai/chat` without the text).
 
-Entries marked Backlog record future work only: export destination selection, recent activity, the functional follow-ups (including F5 and F6), Bing daily and the Duck.ai panel are not implemented.
+Entries marked Backlog record future work only: export destination selection, recent activity, the remaining functional follow-ups (including the F5 fallback and F6), Bing daily and direct Duck.ai prompt transfer are not implemented.
+
+### Group bar: explicit All button
+
+- Status: Implemented on the recovery branch on 2026-10-01; owner check pending.
+- Requested: 2026-10-01.  Selecting General showed its two links and clicking it again cleared the filter, which made navigation confusing.
+- Delivered: All comes first, is highlighted when no filter is set, and clears the filter in one click.  The second-click toggle is kept.

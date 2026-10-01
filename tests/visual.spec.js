@@ -90,15 +90,16 @@ test('visual review: fresh profiles get the pale surface; existing profiles keep
 test('visual review: text contrast meets 4.5:1 on pale, dark and image wallpapers', async ({page}) => {
   for (const state of Object.keys(states)) {
     await open(page, states[state]);
-    await page.locator('#groupBar .pill').first().click();
+    await page.locator('#groupBar .pill').nth(1).click();
     const results = await page.evaluate(() => {
       const parse = c => c.match(/[\d.]+/g).map(Number);
       const lum = ([r, g, b]) => [r, g, b].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
       const surface = el => { for (let n = el; n; n = n.parentElement) { const b = parse(getComputedStyle(n).backgroundColor); if (b.length < 4 || b[3] === 1) return b; if (b[3] > 0) return null; } return null; };
       const ratio = (fg, bg) => { const [a, b] = [lum(fg), lum(bg)].sort((x, y) => y - x); return (a + 0.05) / (b + 0.05); };
-      const checks = {'.tip': null, '.card .title': null, '.card .desc': null, '.pill:not(.active)': null, '.pill.active': null, '.search .engine': null, '.search input': '::placeholder', '.header-action.with-label span': null};
-      return Object.entries(checks).map(([selector, pseudo]) => {
+      const checks = {'.tip': null, '.card .title': null, '.card .desc': null, '.pill:not(.active)': null, '.pill.active': null, '.search .engine': null, '.search input': '::placeholder', '.header-action.with-label span': null, '.action-btn span': null, '#duckStatus': null};
+      return [...Object.entries(checks), ['#duckStatus', 'error']].map(([selector, pseudo]) => {
         const el = document.querySelector(selector); if (!el) return {selector, missing: true};
+        if (pseudo === 'error') { el.classList.add('error'); pseudo = null; selector += '.error'; }
         const bg = surface(el);
         // The header label sits on the navy gradient; compare with its lighter end.
         const background = selector.startsWith('.header-action') ? [23, 63, 99] : bg;
@@ -137,8 +138,22 @@ test('visual review: controls have names, no emoji, and a visible keyboard focus
     if (focus.what === 'pill' && !seen.slice(0, -1).includes('pill')) await shot(page, 'desktop-focus-group-filter');
     if (focus.what === 'icon-btn' && !seen.slice(0, -1).includes('icon-btn')) await shot(page, 'desktop-focus-tile-more');
   }
-  for (const expected of ['logo', 'settingsBtn', 'gMic', 'pill', 'icon-btn']) expect(seen.join(' ')).toContain(expected);
-  expect(seen.length).toBe(18 + 3 + links.length); // header and search controls, group filters, one menu button per tile
+  for (const expected of ['logo', 'settingsBtn', 'gMic', 'duckPrompt', 'duckCopyOpen', 'duckOpen', 'pill', 'icon-btn']) expect(seen.join(' ')).toContain(expected);
+  expect(seen.length).toBe(19 + 4 + links.length); // header and search controls, All plus three group filters, one menu button per tile
+  // Duck.ai copy flow messages, with the clipboard and new tab replaced.
+  await page.evaluate(() => { window.open = () => ({}); Object.defineProperty(navigator, 'clipboard', {configurable: true, value: {writeText: async () => {}}}); });
+  await page.locator('#duckPrompt').fill('Plan my week'); await page.locator('#duckPrompt').press('Enter');
+  await expect(page.locator('#duckStatus')).toBeVisible();
+  await page.locator('#duckCopyOpen').hover();
+  await shot(page, 'desktop-duck-copied');
+  await page.evaluate(() => { navigator.clipboard.writeText = async () => { throw new Error('denied'); }; document.execCommand = () => false; });
+  await page.locator('#duckPrompt').press('Enter');
+  await expect(page.locator('#duckStatus')).toHaveClass(/error/);
+  await shot(page, 'desktop-duck-copy-failed');
+  await page.setViewportSize(viewports.phone);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+  await shot(page, 'phone-duck-copy-failed');
+  await page.setViewportSize(viewports.desktop);
   // Hover tooltip on an icon control.
   await page.locator('#settingsBtn').hover();
   expect(await page.evaluate(() => getComputedStyle(document.getElementById('settingsBtn'), '::after').display)).toBe('block');
@@ -160,7 +175,9 @@ test('visual review: tile hover, menu, selected group and locked layout states',
   expect(await card.locator('.icon-btn').evaluate(el => getComputedStyle(el, '::after').display)).toBe('none'); // tooltip must not cover the menu
   await shot(page, 'desktop-tile-menu');
   await page.locator('.tip').click();
-  await page.locator('#groupBar .pill').first().click();
+  await expect(page.locator('#groupBar .pill.active')).toHaveText('All');
+  await page.locator('#groupBar .pill').nth(1).click();
+  await expect(page.locator('#groupBar .pill.active')).toHaveText('Finance');
   await expect(page.locator('#groupBar .pill.active')).toHaveCSS('background-color', 'rgb(23, 63, 99)');
   await expect(page.locator('#groupBar .pill.active')).toHaveAttribute('aria-pressed', 'true');
   await page.evaluate(() => { setSettings({...getSettings(), lockLayout: 'yes', showExtraSearch: 'no'}); render(); });
