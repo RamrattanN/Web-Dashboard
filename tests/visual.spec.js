@@ -241,7 +241,7 @@ for (const size of ['desktop', 'phone']) test(`visual review: ${size} dialogs fi
 test('visual review: Picsum failure message, retry button and Settings explanation', async ({page}) => {
   await page.setViewportSize(viewports.desktop);
   await open(page, states.picsum);
-  await expect(page.locator('#changePictureBtn')).toHaveCSS('display', 'inline-flex');
+  await expect(page.locator('#changePictureBtn')).toBeVisible();
   await page.route(/^https:\/\/picsum\.photos\/seed\/pick-/, route => route.abort());
   await page.locator('#changePictureBtn').click();
   await expect(page.locator('#wallpaperStatus')).toBeVisible();

@@ -547,15 +547,20 @@ const picsumSaved = page => page.evaluate(() => { const st = getSettings(); retu
 async function startPicsum(page, {time = '2026-10-01T10:00:00', settings = {mode: 'picsum', color: '#123456'}} = {}) {
   await page.clock.setFixedTime(new Date(time));
   await setup(page);
-  const net = {seeds: [], fail: () => false, hold: () => undefined}; // hold(seed) may return a promise that delays that response
+  // The browser fetches a picture twice (preload, then paint), so `seeds` lists each distinct seed once, in order;
+  // `requests` counts every fetch. hold(seed) may return a promise that delays that seed's first response.
+  const net = {seeds: [], requests: 0, fail: () => false, hold: () => undefined};
   await page.route(/^https:\/\/picsum\.photos\/seed\//, async route => {
     const seed = decodeURIComponent(route.request().url().split('/')[4]);
-    net.seeds.push(seed);
+    net.requests++;
+    if (!net.seeds.includes(seed)) net.seeds.push(seed);
     await net.hold(seed);
     return net.fail(seed) ? route.abort() : route.fulfill({contentType: 'image/png', body: png(64)});
   });
   await page.evaluate(settings => setSettings({...getSettings(), ...settings}), settings);
   net.reload = async () => { await page.reload(); };
+  // Resolves once no Picsum request has arrived for 400ms.
+  net.quiet = async () => { let last; do { last = net.requests; await page.waitForTimeout(400); } while (net.requests !== last); };
   return net;
 }
 
@@ -571,15 +576,17 @@ test('Picsum daily shows the picture for the local day, keeps it on a same-day r
   await net.reload();
   await picsumShown(page, 'daily-2026-10-01');
   // Unrelated redraws do not request the picture again.
-  const before = net.seeds.length;
+  await net.quiet();
+  const before = net.requests;
   await page.evaluate(async () => { render(); render(); await applyWallpaper(); });
-  expect(net.seeds.length).toBe(before);
+  await net.quiet();
+  expect(net.requests).toBe(before);
   // Opening on the next day requests that day's picture and saves it.
   await page.clock.setFixedTime(new Date('2026-10-02T08:00:00'));
   await net.reload();
   await picsumShown(page, 'daily-2026-10-02');
   await expect.poll(() => picsumSaved(page)).toEqual({mode: 'picsum', seed: 'daily-2026-10-02', date: '2026-10-02'});
-  expect([...new Set(net.seeds)]).toEqual(['daily-2026-10-01', 'daily-2026-10-02']);
+  expect(net.seeds).toEqual(['daily-2026-10-01', 'daily-2026-10-02']);
 });
 
 test.describe('Picsum in a timezone ahead of UTC', () => {
@@ -607,9 +614,12 @@ test('Change picture loads a new seed each click, saves it, and a same-day reloa
   const second = net.seeds[2];
   expect(second).toMatch(/^pick-2026-10-01-[a-z0-9]+$/); expect(second).not.toBe(first);
   await picsumShown(page, second);
+  await net.quiet();
+  const beforeReload = net.requests;
   await net.reload();
   await picsumShown(page, second);
-  expect(net.seeds.at(-1)).toBe(second);
+  expect(net.requests).toBeGreaterThan(beforeReload); // the reload asked for the saved manual seed again
+  expect(net.seeds).toEqual(['daily-2026-10-01', first, second]);
   await expect.poll(() => picsumSaved(page)).toEqual({mode: 'picsum', seed: second, date: '2026-10-01'});
   // A manual choice lasts for its day only.
   await page.clock.setFixedTime(new Date('2026-10-02T08:00:00'));
@@ -629,16 +639,19 @@ test('a failed Picsum picture keeps the working background, shows a message, is 
   await picsumShown(page, 'daily-2026-10-01');
   expect(await picsumSaved(page)).toEqual({mode: 'picsum', seed: 'daily-2026-10-01', date: '2026-10-01'});
   const failed = net.seeds.at(-1);
+  expect(failed).toMatch(/^pick-/);
   // No automatic retry on unrelated redraws.
-  const before = net.seeds.length;
+  await net.quiet();
+  const before = net.requests;
   await page.evaluate(async () => { render(); await applyWallpaper(); });
-  expect(net.seeds.length).toBe(before);
+  await net.quiet();
+  expect(net.requests).toBe(before);
   await expect(status).toBeVisible();
   // Try again asks for the same candidate; once it loads it is shown and saved.
   failing = false;
   await page.getByRole('button', {name: 'Try again', exact: true}).click();
   await picsumShown(page, failed);
-  expect(net.seeds.at(-1)).toBe(failed);
+  expect(net.requests).toBeGreaterThan(before);
   await expect(status).toBeHidden();
   await expect.poll(() => picsumSaved(page)).toEqual({mode: 'picsum', seed: failed, date: '2026-10-01'});
 
