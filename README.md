@@ -4,7 +4,7 @@ A customizable single-page browser dashboard with tiles, groups, search, wallpap
 
 ## Run it
 
-1. Download [`index.html`](https://github.com/RamrattanN/Web-Dashboard/blob/main/index.html) from this repository.
+1. For this unreleased recovery, download [`index.html`](https://github.com/RamrattanN/Web-Dashboard/blob/recovery/wallpaper-and-regressions/index.html) from the recovery branch.  The file on `main` is the earlier baseline and does not include this work.
 2. Open the file in a browser.  Configure tiles and layout using the Settings dialog.
 3. If you serve it from a web server, replace its `index.html` with this file and reload the page.
 
@@ -12,11 +12,11 @@ There is no build step or package installation.  See the [Wiki](https://github.c
 
 ## Network and privacy
 
-The page loads Google Fonts and may request favicons from saved sites or external favicon services.  Search, remote wallpaper, and opening a tile contact the selected providers or sites.  Review the URLs and browser requests if you need an offline setup.  Browser settings and dashboard data are stored locally in your browser.
+The visual refresh uses Arial/Helvetica system fonts and embedded application assets, without Google Fonts or a runtime dependency on Ramrattan Rentals.  The page may request favicons from saved sites or external favicon services.  Search, remote wallpaper, and opening a tile contact the selected providers or sites.  Review the URLs and browser requests if you need an offline setup.  Browser settings and dashboard data are stored locally in your browser.
 
 ## Wallpaper and data
 
-Solid color is the first-run default. Static URLs and local images are
+A pale solid colour is the fresh-install default.  Existing wallpaper choices are preserved. Static URLs and local images are
 preloaded before they replace the background. A failed request preserves the
 background already displayed on the page, but that previous image is not
 cached across reloads. A failed wallpaper is tried again when you Save
@@ -54,7 +54,7 @@ npm ci
 npm test
 ```
 
-On macOS these checks use installed Google Chrome; CI installs Chromium.
+CI installs Chromium and is the current automated verification route.  Earlier automated Chrome launches on the owner's Mac aborted before the dashboard loaded; do not repeat those launches in that environment.  Manual Mac checks use normally opened Chrome in the separate Dashboard Test profile.  Other developer environments may run the commands above where browser launch is supported.
 The deterministic suite intercepts remote requests. A separate opt-in live
 Bing diagnostic reports whether the provider loaded or the fallback remained:
 
@@ -62,7 +62,8 @@ Bing diagnostic reports whether the provider loaded or the fallback remained:
 LIVE_BING=1 npx playwright test --grep 'live Bing browser probe'
 ```
 
-See [BASELINE.md](BASELINE.md) for recovery provenance, verification limits,
-and exact Mac acceptance steps with a 16-link fixture. See
+Functional acceptance was completed on 2026-10-01 for Chrome on macOS using the local `file://` dashboard, with complementary Linux Chromium CI coverage.  That record applies to the functional version at `443a334`; the subsequent visual refresh still requires owner visual acceptance.  Safari, Windows and real touch devices are not accepted platforms yet.
+
+See [DESIGN_BASELINE.md](DESIGN_BASELINE.md) for the Ramrattan Rentals visual specification.  See [BASELINE.md](BASELINE.md) for recovery provenance, the evidence sources and verification limits, and a repeatable Mac checklist with a 16-link fixture. See
 [CHANGELOG.md](CHANGELOG.md) for changes and [SECURITY.md](SECURITY.md) for
 private vulnerability reporting. No release is published by this recovery.
