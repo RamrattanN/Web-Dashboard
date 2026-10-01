@@ -95,6 +95,6 @@
 - Bing daily wallpaper: disabled in Settings until a real Bing image is shown to load in a browser.  Bing blocks the request by CORS; re-enabling needs a verified approach and a separate decision on any proxy or backend.
 - Group filter with no matching group (review finding F5): after an import, or after removing or editing the last tile in the active group, the grid is empty and no pill is shown to clear the filter.  Fall back to All, or show a way to clear it.
 - Import of hand-edited backups (review finding F6): numeric settings written as strings, such as `"maxTiles": "3"`, are rejected.  Backups written by the dashboard are unaffected.  Any change must keep validation strict rather than loosen it.
-- Duck.ai search panel: replace the DuckDuckGo panel once it is confirmed in a browser that DuckDuckGo's `!ai` route carries the entered prompt into Duck.ai.
+- Duck.ai search panel: deferred.  Replace the DuckDuckGo panel only once an approach is verified in a browser to carry typed text into Duck.ai.  DuckDuckGo's `!ai` route failed this on 2026-10-01 in Chrome on macOS: `https://duckduckgo.com/?q=%21ai+dashboard+prompt+test+12345` opened ordinary search results, so that route must not be used.  DuckDuckGo search parameters also do not carry over (`duckduckgo.com/chat?q=…` redirects to `duck.ai/chat` without the text).
 
 These entries record future work only.  Application behaviour is unchanged.
