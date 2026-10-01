@@ -74,4 +74,19 @@
 - Preserve existing tiles, settings, import/export, and drag behaviour.
 - This entry documents the agreed design only; implementation is deferred.
 
+### Visual refresh: adopt the Ramrattan Rentals design baseline
+
+- Status: Backlog.  Deferred until Claude's current functional fixes, review, CI, and manual acceptance are complete.
+- Requested: 2026-10-01.
+- User direction: Finish the existing Claude workload first.  Prepare the cosmetic implementation work order later.
+- Specification: [DESIGN_BASELINE.md](DESIGN_BASELINE.md), containing the pinned Rentals source reference, exact palette, typography, icon style, brand asset, surfaces, controls, and verification requirements.
+- Scope:
+  - Adopt the navy header, pale page surface, white cards, rounded controls, and subtle shadows.
+  - Use Arial, Helvetica, sans-serif and consistent outline SVG application icons.
+  - Use the existing Ramrattan shield logo; retain saved-site favicons and custom icons.
+  - Correct the unreadable dashboard tip text.
+  - Preserve existing users' wallpaper choices and all functional behaviour.
+- Acceptance: Verify desktop and narrow-screen presentation, contrast, keyboard focus, saved wallpapers, long titles, tile sizing and density controls, and existing functional regression checks.
+- Do not implement this item or start another editing agent while the current functional workload is underway.
+
 These entries record future work only.  Application behaviour is unchanged.
