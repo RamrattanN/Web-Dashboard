@@ -58,18 +58,54 @@ cross-origin restriction. A proxy/backend would need a separate discussion.
 Inline JavaScript syntax, dependency audit (zero reported vulnerabilities),
 and `git diff --check` also passed at that commit.
 
-A later functional-fix commit changed the application and extended the suite
-to 27 deterministic checks plus the live diagnostic (drag overlap and order
-validation, per-mode wallpaper values, Bing market validation and deferral,
-retry behaviour, storage errors, and the three-of-six acceptance scenarios).
-The figures above predate it; its results are the CI checks on PR #3 for the
-current head, not this record.
+Functional-fix commit `443a334` changed the application and extended the
+suite (drag overlap and order validation, per-mode wallpaper values, Bing
+market validation and deferral, retry behaviour, storage errors, and the
+three-of-six acceptance scenarios). The figures above predate it. On
+2026-10-01 both CI runs for `443a334`
+([36897323749](https://github.com/RamrattanN/Web-Dashboard/actions/runs/36897323749),
+[36897318872](https://github.com/RamrattanN/Web-Dashboard/actions/runs/36897318872))
+ran 28 tests: **27 passed, 1 skipped, 0 failed**. The skipped test is the
+opt-in live Bing probe; in its own step it passed its fallback assertion
+(Bing blocked the request by CORS and the previous image remained). Later
+commits on the branch change documentation only.
 
-Mac browser execution in the development agent was blocked: Chrome launch
-aborted under host restrictions, and the browser-control tool denied `file:`
-URLs. Do not interpret CI results as Mac/Safari acceptance. The checklist
-below remains a manual acceptance gate. Windows and touch-device behaviour
-have not been reverified.
+## Functional acceptance record — 2026-10-01
+
+Each result names its source. **CI** is Playwright driving Chromium on Linux
+with intercepted network requests, at `443a334`. **Owner** is Nilesh
+Ramrattan testing by hand in normal Chrome on macOS, in the Dashboard Test
+profile, with the dashboard opened from a local `file://` path on the fixed
+version (`443a334`). The Chrome version was not recorded. No result comes
+from agent-driven browser testing: local Chrome automation was not run, and
+attempted browser-sidebar checks were blocked and provide no evidence.
+
+| Check | Result | Source |
+| --- | --- | --- |
+| Tile drag ordering, including persistence after reload | Passed | Owner; CI |
+| Work-group reordering leaves other tiles in place, persists after reload | Passed | Owner; CI |
+| Layout lock blocks dragging; single click opens one tab; More menu and right-click menu work while locked; lock persists after reload | Passed | Owner; CI for locking and opening |
+| Solid colour wallpaper, including reload | Passed | Owner |
+| Saved local image returns when switching back to Local image file, including reload | Passed | Owner; CI |
+| Local image upload, including reload | Passed | Owner; CI for staging and Save |
+| Export/import restoration | Passed | Owner (before the fixes, at `d35b513`); CI at `443a334` |
+| Imported tiles, settings and order persist after reload | Passed | CI |
+| Cancelling a tile edit keeps the original values (Cancel button) | Passed | CI |
+| Cancelling a tile edit with Escape keeps the original title | Passed | Owner |
+| Cancelling Settings (Close and Escape) keeps saved values and appearance, including a staged local image | Passed | CI |
+| Six links with a three-tile cap: reordering keeps every hidden link, with and without a group filter | Passed | CI |
+| Failed static wallpaper request keeps the working background | Passed | Owner (real request to `https://example.com/missing-wallpaper.png`); CI (intercepted request) |
+| Bing daily is greyed out and cannot be selected | Passed | Owner; CI |
+| Bing failures keep the previous background; only a market code is sent | Passed | CI (controlled responses) |
+| Bing loads a real image | **Not achieved** | CI live probe: blocked by Bing's CORS policy; feature deferred |
+| A second pointer during a drag is ignored; invalid orders are not saved | Passed | CI (synthetic second pointer); not tested on a touch device |
+| Oversized local image shows a storage error and keeps settings | Passed | CI (simulated full storage); not tested with a real oversized file |
+
+Not verified in any browser: Safari, Windows, and touch devices. Duck.ai
+prompt transfer through DuckDuckGo's `!ai` route was tested by the owner and
+**failed** (ordinary search results opened), so that panel change is deferred.
+The steps below are the original checklist, kept for repeating acceptance in
+another browser.
 
 ## Exact Mac acceptance steps
 
