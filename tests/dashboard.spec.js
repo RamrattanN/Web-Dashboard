@@ -5,7 +5,7 @@ const url = pathToFileURL(path.resolve('index.html')).href;
 const pixel = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
 const links = Array.from({length: 16}, (_, i) => ({url: `https://example.com/${i}`, title: `Tile ${i}`, group: i % 2 ? 'Other' : 'Work', desc: `Description ${i}`, icon: pixel}));
 async function setup(page, settings = {}) {
-  await page.route('https://**', route => route.abort());
+  await page.route(/^https:\/\//, route => route.abort());
   await page.goto(url);
   await page.evaluate(({links, settings}) => {
     localStorage.setItem('startpage.links.v1', JSON.stringify(links));
@@ -274,7 +274,7 @@ for (const [mode, value] of [['local', pixel], ['static', 'https://example.com/w
 });
 
 test('Bing daily is not selectable or the first-run default; a saved Bing mode is preserved', async ({page}) => {
-  await page.route('https://**', route => route.abort());
+  await page.route(/^https:\/\//, route => route.abort());
   await page.goto(url);
   await page.evaluate(() => localStorage.clear()); await page.reload();
   expect(await page.evaluate(() => getSettings().mode)).toBe('none');

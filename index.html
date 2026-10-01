@@ -55,6 +55,7 @@
       font: 600 0.8rem/1.3 Arial, Helvetica, sans-serif; letter-spacing: 0; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.2); pointer-events: none;
     }
     [data-tip]:hover::after, [data-tip]:focus-visible::after{ display: block; }
+    .card:has(.menu.open) [data-tip]::after{ display: none; }
 
     .wrap{ min-height: 100%; display: grid; grid-template-rows: auto auto 1fr; }
 

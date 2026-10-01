@@ -14,11 +14,11 @@ const titles = ['Mail', 'Calendar', 'A very long saved link title that must trun
 const links = titles.map((title, i) => ({url: `https://example.com/${i}`, title, group: ['Work', 'Personal', 'Finance'][i % 3], desc: i % 4 === 3 ? '' : `Description for ${title.toLowerCase()} with enough words to need clamping`, icon: ''}));
 
 // Reduced motion keeps computed colours and screenshots free of half-finished transitions.
-test.use({reducedMotion: 'reduce'});
+test.use({contextOptions: {reducedMotion: 'reduce'}});
 
 // `state` is null for a brand-new profile, a settings object, or a function producing one in the page.
 async function open(page, state) {
-  await page.route('https://**', route => route.abort());
+  await page.route(/^https:\/\//, route => route.abort());
   await page.goto(url);
   const settings = typeof state === 'function' ? await state(page) : state;
   await page.evaluate(({links, settings}) => {
@@ -30,6 +30,8 @@ async function open(page, state) {
   }, {links, settings});
   await page.reload();
   await expect(page.locator('#grid .card').first()).toBeVisible();
+  // No favicon can load, so every tile settles on its letter monogram before any screenshot.
+  await expect(page.locator('#grid .card .tile-letter')).toHaveCount(await page.locator('#grid .card').count());
 }
 // A busy image with very dark and very bright regions, standing in for an arbitrary wallpaper.
 const photo = page => page.evaluate(() => {
@@ -120,8 +122,9 @@ test('visual review: controls have names, no emoji, and a visible keyboard focus
   expect(await page.evaluate(() => Array.from(document.querySelectorAll('.icon-btn, .header-action')).every(b => b.dataset.tip && b.querySelector('svg use')))).toBe(true);
   expect(await page.evaluate(() => Array.from(document.querySelectorAll('svg use')).every(u => document.querySelector(u.getAttribute('href'))))).toBe(true);
   const seen = [];
-  for (let i = 0; i < 34; i++) {
+  for (let i = 0; i < 60; i++) {
     await page.keyboard.press('Tab');
+    if (await page.evaluate(() => document.activeElement === document.body)) break; // Tabbed past the last control.
     const focus = await page.evaluate(() => {
       const el = document.activeElement; const cs = getComputedStyle(el);
       const outline = cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) >= 2;
@@ -133,6 +136,7 @@ test('visual review: controls have names, no emoji, and a visible keyboard focus
     if (i === 1) { await expect(page.locator('#addBtn')).toBeFocused(); await shot(page, 'desktop-focus-header-action'); }
   }
   for (const expected of ['logo', 'settingsBtn', 'gMic', 'pill', 'icon-btn']) expect(seen.join(' ')).toContain(expected);
+  expect(seen.length).toBe(18 + 3 + links.length); // header and search controls, group filters, one menu button per tile
   await shot(page, 'desktop-focus-tile-more');
   // Hover tooltip on an icon control.
   await page.locator('#settingsBtn').hover();
@@ -152,6 +156,7 @@ test('visual review: tile hover, menu, selected group and locked layout states',
   await expect(card.locator('.menu')).toBeVisible();
   const menu = await card.locator('.menu').boundingBox();
   expect(await page.evaluate(({x, y}) => !!document.elementFromPoint(x, y).closest('.menu'), {x: menu.x + menu.width / 2, y: menu.y + menu.height - 12})).toBe(true);
+  expect(await card.locator('.icon-btn').evaluate(el => getComputedStyle(el, '::after').display)).toBe('none'); // tooltip must not cover the menu
   await shot(page, 'desktop-tile-menu');
   await page.locator('.tip').click();
   await page.locator('#groupBar .pill').first().click();
