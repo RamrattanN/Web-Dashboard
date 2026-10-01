@@ -42,6 +42,20 @@ Settings or reload, not on every redraw. The legacy Unsplash keyword option
 is retained for existing settings but its external endpoint is not guaranteed
 to work.
 
+**Picsum daily** shows an online photo from `https://picsum.photos`, loaded
+as an ordinary image with no API key, proxy or backend. The picture is chosen
+by a seed made from your local calendar date, so opening or reloading the
+dashboard on a new day requests that day's photo; there is no background
+timer. **Change picture** in the header asks for a new seed each time; Picsum
+may return the same photo for different seeds, so a different picture is not
+guaranteed. The seed of the last photo that loaded is saved with its date:
+reloading on the same day shows it again, including one you chose with Change
+picture, and a backup carries it. A photo that fails to load is never saved:
+the background already on screen stays, a message with **Try again** appears,
+and on a fresh load with no photo available the solid colour is shown. In
+this mode the browser contacts `picsum.photos` and the image host it
+redirects to.
+
 **Bing daily is deferred and cannot be selected.** Bing does not allow
 browser pages to read its image archive (the request is blocked by CORS), so
 a real Bing image has never loaded in testing; only controlled responses

@@ -277,3 +277,32 @@ continues to the next source.
 | Which real sources hold the ChatGPT icon and which headers they send | Agent requests with curl, and viewing the returned images | The real services' answers on 2026-10-01. Not a browser |
 | Official icon shown for a legacy tile with no CORS request and the saved URL unchanged; fallback to a service for `chatgpt.com`; placeholders skipped; monogram when nothing loads; custom icons untouched; Refresh icon and stale-cache recovery | CI (Linux Chromium) with every icon response supplied by the test | The dashboard's lookup logic. Nothing is fetched from the real services |
 | The ChatGPT icon appears after Refresh icon and survives a reload; other tile icons unchanged | Owner, normal Chrome on macOS, Dashboard Test profile, at `0c22c32`, reported passed on 2026-10-01 | The owner's real tile, cache and network. One targeted check, not a repeat of the earlier seven |
+
+## Picsum daily wallpaper — implemented, owner dashboard acceptance pending
+
+Added after the acceptances above; none of them covers it.
+
+Behaviour: wallpaper mode `picsum` loads
+`https://picsum.photos/seed/{seed}/1920/1080` as an ordinary image and
+preloads it before replacing the background. The seed is `daily-YYYY-MM-DD`
+from the local calendar date unless a picture was already saved for today.
+Change picture requests a new `pick-…` seed. After a photo loads, its seed
+and date are stored as `picsumSeed` and `picsumDate` in
+`startpage.settings.v1`, so they travel in backups; older backups import
+unchanged, and a seed that is not plain letters, digits, `_` or `-` is
+ignored. On failure nothing is stored, the displayed background stays, a
+message with Try again is shown, and unrelated redraws do not retry. The
+solid colour is kept behind the photo and is what shows when no photo loads.
+
+| Evidence | Source | What it does and does not show |
+| --- | --- | --- |
+| Seed A displays, reload displays A, Seed B displays, a failed request preserves B, on `file://` and on localhost | Owner's isolated Picsum investigation, Chrome on macOS, before this implementation | That Picsum images load directly in the owner's browser. It did not exercise the dashboard. Browser version, image dimensions and timings were not recorded |
+| Daily seed from the local date (including a timezone ahead of UTC); same-day reload; new day; Change picture and its persistence; failure keeps the background, shows the message, saves nothing and does not auto-retry; Try again; fresh load with no photo keeps the solid colour; slow responses cannot replace a newer picture or another mode; switching modes in Settings; export and import, older backups, malformed seeds | CI (Linux Chromium) with every picsum.photos response supplied by the test and the clock fixed | The dashboard's logic. Nothing is fetched from Picsum |
+| Header with Change picture at 1440, 820 and 375 px, the failure message, and the Settings explanation | CI layout and contrast assertions, and agent inspection of the CI screenshots | Linux Chromium with a flat grey stand-in image |
+| Picsum daily on the real dashboard: loading, Change picture, reload, failure retention | **Pending owner check** | |
+
+Limits: a different seed does not guarantee a different photo; the photo for
+a seed is whatever Picsum serves and may change if Picsum changes its
+catalogue; there is no offline copy, so a reload without network shows the
+solid colour; the day changes only when the dashboard is opened, reloaded or
+redrawn, not on a timer.

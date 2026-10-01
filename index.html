@@ -83,6 +83,7 @@
     .header-action.with-label{ padding: 0 16px 0 12px; border-color: var(--white); background: rgba(255,255,255,0.14); }
     .header-action:hover{ border-color: var(--white); background: rgba(255,255,255,0.2); transform: translateY(-1px); }
     .header-action:focus-visible{ outline: 4px solid var(--white); outline-offset: 3px; }
+    .header-action[hidden]{ display: none; }
 
     .search-area{ display: grid; gap: 12px; justify-items: center; padding: 24px 2vw 0; }
     .search-bar, .search-row-2{ width: min(1200px, 100%); display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -121,6 +122,7 @@
     }
     .search-status.error{ border-color: #a66300; background: #fff6e6; color: #5c3700; }
     .search-status[hidden]{ display: none; }
+    .search-status .action-btn{ margin-left: 10px; vertical-align: middle; }
 
     main{ display: grid; justify-items: center; align-content: start; padding: 6px 0 48px; }
     .grid-wrap{ width: min(1400px, 96vw); }
@@ -195,6 +197,7 @@
     .field input[type="file"]{ padding: 7px 8px; }
     .field input:focus, .field textarea:focus, .field select:focus{ border-color: var(--blue); outline: 3px solid var(--ring); outline-offset: 1px; }
     .field select option:disabled{ color: #8a97a3; }
+    .field-hint{ margin: 0; color: var(--muted); font-size: 0.84rem; line-height: 1.4; }
     .row{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .sheet .actions, .actions-row{
       position: sticky; bottom: 0; z-index: 2; display: flex; justify-content: flex-end; align-items: center; gap: 10px;
@@ -223,8 +226,8 @@
       .tip{ border-radius: 14px; }
     }
     @media (max-width: 1100px){
-      .action-btn{ width: 36px; padding: 0; justify-content: center; }
-      .action-btn span{ display: none; }
+      .search .action-btn{ width: 36px; padding: 0; justify-content: center; }
+      .search .action-btn span{ display: none; }
     }
     @media (max-width: 560px){
       .row{ grid-template-columns: 1fr; }
@@ -247,6 +250,7 @@
     <symbol id="i-ai" viewBox="0 0 64 64"><path d="M27 9c2 13 6 17 19 19-13 2-17 6-19 19-2-13-6-17-19-19 13-2 17-6 19-19Z"/><path d="M49 40c1 6 3 8 9 9-6 1-8 3-9 9-1-6-3-8-9-9 6-1 8-3 9-9Z"/></symbol>
     <symbol id="i-copy" viewBox="0 0 64 64"><rect x="22" y="20" width="32" height="36" rx="6"/><path d="M42 20v-6a6 6 0 0 0-6-6H16a6 6 0 0 0-6 6v24a6 6 0 0 0 6 6h6"/></symbol>
     <symbol id="i-open" viewBox="0 0 64 64"><path d="M27 13H14a5 5 0 0 0-5 5v32a5 5 0 0 0 5 5h32a5 5 0 0 0 5-5V37"/><path d="M38 9h17v17M55 9 30 34"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 64 64"><path d="M52 21a22 22 0 0 0-39 5M12 43a22 22 0 0 0 39-5"/><path d="M53 8v13H40M11 56V43h13"/></symbol>
     <symbol id="i-more" viewBox="0 0 64 64"><circle cx="32" cy="13" r="3.5"/><circle cx="32" cy="32" r="3.5"/><circle cx="32" cy="51" r="3.5"/></symbol>
   </svg>
 
@@ -260,6 +264,7 @@
         <div class="logo" id="logo" contenteditable="true" spellcheck="false" role="textbox" aria-label="Dashboard title" title="Click to edit">Dashboard</div>
       </div>
       <div class="header-actions">
+        <button class="header-action with-label" id="changePictureBtn" type="button" aria-label="Change picture" data-tip="Load another Picsum photo" hidden><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg><span>Change picture</span></button>
         <button class="header-action with-label" id="addBtn" type="button" aria-label="Add link" data-tip="Add a link"><svg class="i" aria-hidden="true"><use href="#i-add"/></svg><span>Add link</span></button>
         <button class="header-action" id="importBtn" type="button" aria-label="Import backup" data-tip="Import backup"><svg class="i" aria-hidden="true"><use href="#i-import"/></svg></button>
         <button class="header-action" id="exportBtn" type="button" aria-label="Export backup" data-tip="Export backup"><svg class="i" aria-hidden="true"><use href="#i-export"/></svg></button>
@@ -305,6 +310,7 @@
       </div>
 
       <p class="search-status" id="duckStatus" role="status" aria-live="polite" hidden></p>
+      <p class="search-status error" id="wallpaperStatus" role="status" aria-live="polite" hidden><span>Picsum could not supply a picture. The current background is kept.</span><button class="action-btn" type="button" id="wallpaperRetry">Try again</button></p>
       <p class="tip">Tip: press Enter to search.  Drag to reorder.  Use the ⋮ on hover or right click for actions.</p>
     </section>
 
@@ -440,13 +446,15 @@
         <legend>Wallpaper</legend>
         <div class="field">
           <label for="wallpaperMode">Wallpaper mode</label>
-          <select id="wallpaperMode">
+          <select id="wallpaperMode" aria-describedby="picsumHint">
             <option value="static">Static image URL</option>
             <option value="local">Local image file</option>
             <option value="bing" disabled>Bing daily (unavailable: provider blocks browser requests)</option>
+            <option value="picsum">Picsum daily (online photos)</option>
             <option value="unsplash">Unsplash keyword daily</option>
             <option value="none">Solid color</option>
           </select>
+          <p class="field-hint" id="picsumHint">Picsum daily shows a photo supplied online by picsum.photos, a new one each day. Use Change picture in the header for another; a different photo is not guaranteed. The solid color shows if no photo can be loaded.</p>
         </div>
         <div class="row">
           <div class="field">
@@ -669,12 +677,33 @@
     }
 
     const wallpaper = document.getElementById('wallpaper');
+    const changePictureBtn = document.getElementById('changePictureBtn');
+    const wallpaperStatus = document.getElementById('wallpaperStatus');
     let wallpaperRequest = 0;
     let wallpaperSelection = '';
     const BING_MARKET = /^[a-z]{2}-[a-z]{2}$/i;
+    const PICSUM_SEED = /^[\w-]{1,64}$/;
+    let picsumPending = ''; // Seed asked for by Change picture or Try again. It is saved only once its image has loaded.
+    let picsumFailed = '';
+    function localDateKey(){
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    // Today's saved picture if there is one, otherwise the seed for the local calendar day.
+    function picsumSeed(st){
+      if (picsumPending) return picsumPending;
+      const today = localDateKey();
+      return st.picsumDate === today && PICSUM_SEED.test(st.picsumSeed || '') ? st.picsumSeed : 'daily-' + today;
+    }
+    function wallpaperKey(st){
+      return JSON.stringify([st.mode, st.value, st.color, new Date().toDateString(), st.mode === 'picsum' ? picsumSeed(st) : '']);
+    }
     async function applyWallpaper(){
       const st = getSettings();
-      const selection = JSON.stringify([st.mode, st.value, st.color, new Date().toDateString()]);
+      const picsum = st.mode === 'picsum';
+      changePictureBtn.hidden = !picsum;
+      if (!picsum){ picsumPending = picsumFailed = ''; wallpaperStatus.hidden = true; }
+      const selection = wallpaperKey(st);
       if (selection === wallpaperSelection) return;
       wallpaperSelection = selection;
       const request = ++wallpaperRequest;
@@ -683,6 +712,10 @@
         wallpaper.style.backgroundColor = st.color || '#0b1120';
         return;
       }
+      const today = localDateKey();
+      const seed = picsum ? picsumSeed(st) : '';
+      // The solid colour sits behind the photo, so it is what shows when no photo can be loaded.
+      if (picsum) wallpaper.style.backgroundColor = st.color || '#0b1120';
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15000);
       try {
@@ -701,6 +734,8 @@
           url = imageURL.href;
         } else if (st.mode === 'unsplash'){
           url = 'https://source.unsplash.com/1600x900/?' + encodeURIComponent(st.value || 'landscape') + '&sig=' + new Date().toDateString();
+        } else if (picsum){
+          url = 'https://picsum.photos/seed/' + encodeURIComponent(seed) + '/1920/1080';
         }
         if (!url) throw new Error('No wallpaper image selected');
         await new Promise((resolve, reject) => {
@@ -716,11 +751,33 @@
         });
         if (request !== wallpaperRequest) return;
         wallpaper.style.backgroundImage = `url(${JSON.stringify(url)})`;
+        if (picsum){
+          picsumPending = picsumFailed = '';
+          wallpaperStatus.hidden = true;
+          // Only a picture that loaded is remembered, with its date, so a same-day reload shows it again.
+          const latest = getSettings();
+          if (latest.mode === 'picsum' && (latest.picsumSeed !== seed || latest.picsumDate !== today)){
+            latest.picsumSeed = seed; latest.picsumDate = today;
+            try { setSettings(latest); } catch (error){ console.warn('Could not save the Picsum selection.', error); }
+          }
+          wallpaperSelection = wallpaperKey(getSettings());
+        }
       } catch (error){
         // The failed selection stays recorded so unrelated renders do not retry it; Save or a reload does.
-        if (request === wallpaperRequest) console.warn('Wallpaper failed; preserving the previous background.', error);
+        if (request === wallpaperRequest){
+          console.warn('Wallpaper failed; preserving the previous background.', error);
+          if (picsum){
+            // The candidate is dropped and never saved; what is displayed stays the selection.
+            picsumFailed = seed; picsumPending = '';
+            wallpaperSelection = wallpaperKey(getSettings());
+            wallpaperStatus.hidden = false;
+          }
+        }
       } finally { clearTimeout(timeout); }
     }
+    // A new seed each time. Picsum may still return the same photo for different seeds.
+    changePictureBtn.onclick = () => { picsumPending = `pick-${localDateKey()}-${Math.random().toString(36).slice(2, 10) || '0'}`; applyWallpaper(); };
+    document.getElementById('wallpaperRetry').onclick = () => { picsumPending = picsumFailed; wallpaperSelection = ''; applyWallpaper(); };
 
     function applyLayout(layout){
       if (layout === 'compact'){ document.documentElement.style.setProperty('--tile-gap','10px'); }
@@ -753,7 +810,7 @@
       if (data.settings !== undefined){
         if (!data.settings || typeof data.settings !== 'object' || Array.isArray(data.settings)) throw new Error('Invalid settings');
         const st = data.settings;
-        for (const key of ['mode','value','color','showDesc','groupFilter','showExtraSearch','layout','aiDefault','title','lockLayout','backupRemind']){
+        for (const key of ['mode','value','color','showDesc','groupFilter','showExtraSearch','layout','aiDefault','title','lockLayout','backupRemind','picsumSeed','picsumDate']){
           if (st[key] !== undefined && typeof st[key] !== 'string') throw new Error('Invalid setting: ' + key);
         }
         for (const key of ['maxTiles','colsMax','tileWidth']){

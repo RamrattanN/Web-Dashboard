@@ -538,3 +538,241 @@ test('Refresh icon replaces a stale cached source; a cached source that fails or
   await loaded(page, OFFICIAL);
   expect(await iconCache(page)).toEqual({'chat.openai.com': OFFICIAL});
 });
+
+// Picsum daily wallpaper. Every picsum.photos response is supplied by the test: this proves the
+// dashboard's selection, persistence and failure handling, not the provider or a real browser session.
+const picsumUrl = seed => `https://picsum.photos/seed/${seed}/1920/1080`;
+const picsumShown = (page, seed) => expect(page.locator('#wallpaper')).toHaveCSS('background-image', `url("${picsumUrl(seed)}")`);
+const picsumSaved = page => page.evaluate(() => { const st = getSettings(); return {mode: st.mode, seed: st.picsumSeed, date: st.picsumDate}; });
+async function startPicsum(page, {time = '2026-10-01T10:00:00', settings = {mode: 'picsum', color: '#123456'}} = {}) {
+  await page.clock.setFixedTime(new Date(time));
+  await setup(page);
+  const net = {seeds: [], fail: () => false, hold: () => undefined}; // hold(seed) may return a promise that delays that response
+  await page.route(/^https:\/\/picsum\.photos\/seed\//, async route => {
+    const seed = decodeURIComponent(route.request().url().split('/')[4]);
+    net.seeds.push(seed);
+    await net.hold(seed);
+    return net.fail(seed) ? route.abort() : route.fulfill({contentType: 'image/png', body: png(64)});
+  });
+  await page.evaluate(settings => setSettings({...getSettings(), ...settings}), settings);
+  net.reload = async () => { await page.reload(); };
+  return net;
+}
+
+test('Picsum daily shows the picture for the local day, keeps it on a same-day reload, and changes on a new day', async ({page}) => {
+  const net = await startPicsum(page);
+  await net.reload();
+  await picsumShown(page, 'daily-2026-10-01');
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-color', 'rgb(18, 52, 86)');
+  await expect.poll(() => picsumSaved(page)).toEqual({mode: 'picsum', seed: 'daily-2026-10-01', date: '2026-10-01'});
+  await expect(page.locator('#changePictureBtn')).toBeVisible();
+  await expect(page.locator('#changePictureBtn')).toHaveAccessibleName('Change picture');
+  await expect(page.locator('#wallpaperStatus')).toBeHidden();
+  await net.reload();
+  await picsumShown(page, 'daily-2026-10-01');
+  // Unrelated redraws do not request the picture again.
+  const before = net.seeds.length;
+  await page.evaluate(async () => { render(); render(); await applyWallpaper(); });
+  expect(net.seeds.length).toBe(before);
+  // Opening on the next day requests that day's picture and saves it.
+  await page.clock.setFixedTime(new Date('2026-10-02T08:00:00'));
+  await net.reload();
+  await picsumShown(page, 'daily-2026-10-02');
+  await expect.poll(() => picsumSaved(page)).toEqual({mode: 'picsum', seed: 'daily-2026-10-02', date: '2026-10-02'});
+  expect([...new Set(net.seeds)]).toEqual(['daily-2026-10-01', 'daily-2026-10-02']);
+});
+
+test.describe('Picsum in a timezone ahead of UTC', () => {
+  test.use({timezoneId: 'Pacific/Auckland'});
+  test('the daily seed uses the local calendar date, not the UTC date', async ({page}) => {
+    const net = await startPicsum(page, {time: '2026-10-01T22:30:00Z'}); // already 2 October in Auckland
+    await net.reload();
+    await picsumShown(page, 'daily-2026-10-02');
+    await expect.poll(() => picsumSaved(page)).toEqual({mode: 'picsum', seed: 'daily-2026-10-02', date: '2026-10-02'});
+  });
+});
+
+test('Change picture loads a new seed each click, saves it, and a same-day reload keeps the manual choice', async ({page}) => {
+  const net = await startPicsum(page);
+  await net.reload();
+  await picsumShown(page, 'daily-2026-10-01');
+  await page.locator('#changePictureBtn').click();
+  await expect.poll(() => net.seeds.length).toBe(2);
+  const first = net.seeds[1];
+  expect(first).toMatch(/^pick-2026-10-01-[a-z0-9]+$/);
+  await picsumShown(page, first);
+  await expect.poll(() => picsumSaved(page)).toEqual({mode: 'picsum', seed: first, date: '2026-10-01'});
+  await page.locator('#changePictureBtn').click();
+  await expect.poll(() => net.seeds.length).toBe(3);
+  const second = net.seeds[2];
+  expect(second).toMatch(/^pick-2026-10-01-[a-z0-9]+$/); expect(second).not.toBe(first);
+  await picsumShown(page, second);
+  await net.reload();
+  await picsumShown(page, second);
+  expect(net.seeds.at(-1)).toBe(second);
+  await expect.poll(() => picsumSaved(page)).toEqual({mode: 'picsum', seed: second, date: '2026-10-01'});
+  // A manual choice lasts for its day only.
+  await page.clock.setFixedTime(new Date('2026-10-02T08:00:00'));
+  await net.reload();
+  await picsumShown(page, 'daily-2026-10-02');
+});
+
+test('a failed Picsum picture keeps the working background, shows a message, is not saved, and can be retried', async ({page}) => {
+  const net = await startPicsum(page);
+  await net.reload();
+  await picsumShown(page, 'daily-2026-10-01');
+  let failing = true; net.fail = seed => failing && seed.startsWith('pick-');
+  await page.locator('#changePictureBtn').click();
+  const status = page.locator('#wallpaperStatus');
+  await expect(status).toBeVisible();
+  await expect(status).toContainText('Picsum could not supply a picture. The current background is kept.');
+  await picsumShown(page, 'daily-2026-10-01');
+  expect(await picsumSaved(page)).toEqual({mode: 'picsum', seed: 'daily-2026-10-01', date: '2026-10-01'});
+  const failed = net.seeds.at(-1);
+  // No automatic retry on unrelated redraws.
+  const before = net.seeds.length;
+  await page.evaluate(async () => { render(); await applyWallpaper(); });
+  expect(net.seeds.length).toBe(before);
+  await expect(status).toBeVisible();
+  // Try again asks for the same candidate; once it loads it is shown and saved.
+  failing = false;
+  await page.getByRole('button', {name: 'Try again', exact: true}).click();
+  await picsumShown(page, failed);
+  expect(net.seeds.at(-1)).toBe(failed);
+  await expect(status).toBeHidden();
+  await expect.poll(() => picsumSaved(page)).toEqual({mode: 'picsum', seed: failed, date: '2026-10-01'});
+
+  // A fresh load with no picture available keeps the solid colour and saves nothing.
+  await page.evaluate(() => { const st = getSettings(); delete st.picsumSeed; delete st.picsumDate; setSettings(st); });
+  net.fail = () => true;
+  await net.reload();
+  await expect(status).toBeVisible();
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-image', 'none');
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-color', 'rgb(18, 52, 86)');
+  expect(await picsumSaved(page)).toEqual({mode: 'picsum', seed: undefined, date: undefined});
+  net.fail = () => false;
+  await page.getByRole('button', {name: 'Try again', exact: true}).click();
+  await picsumShown(page, 'daily-2026-10-01');
+  await expect(status).toBeHidden();
+
+  // Coming from another mode, a failure leaves that mode's image on screen.
+  await page.evaluate(pixel => { setSettings({...getSettings(), mode: 'local', value: pixel}); render(); }, pixel);
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-image', `url("${pixel}")`);
+  await expect(page.locator('#changePictureBtn')).toBeHidden();
+  net.fail = () => true;
+  await page.evaluate(() => { const st = getSettings(); delete st.picsumSeed; delete st.picsumDate; setSettings({...st, mode: 'picsum', value: ''}); render(); });
+  await expect(status).toBeVisible();
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-image', `url("${pixel}")`);
+});
+
+test('a slow Picsum response cannot replace a newer picture or a different wallpaper mode', async ({page}) => {
+  const net = await startPicsum(page);
+  await net.reload();
+  await picsumShown(page, 'daily-2026-10-01');
+  // Hold the first candidate, then ask for a second one.
+  let releaseAll; const gate = new Promise(resolve => { releaseAll = resolve; });
+  let holdNext = true;
+  net.hold = seed => { if (holdNext && seed.startsWith('pick-')) { holdNext = false; return gate; } };
+  await page.locator('#changePictureBtn').click();
+  await expect.poll(() => net.seeds.length).toBe(2);
+  const slow = net.seeds[1];
+  await page.locator('#changePictureBtn').click();
+  await expect.poll(() => net.seeds.length).toBe(3);
+  const fast = net.seeds[2];
+  await picsumShown(page, fast);
+  const answered = page.waitForResponse(picsumUrl(slow));
+  releaseAll(); await answered;
+  await picsumShown(page, fast);
+  expect(await picsumSaved(page)).toEqual({mode: 'picsum', seed: fast, date: '2026-10-01'});
+
+  // Hold a candidate, switch to solid colour, then let the candidate arrive.
+  let release2; const gate2 = new Promise(resolve => { release2 = resolve; }); let held = false;
+  net.hold = seed => { if (!held && seed.startsWith('pick-')) { held = true; return gate2; } };
+  await page.locator('#changePictureBtn').click();
+  await expect.poll(() => net.seeds.length).toBe(4);
+  const late = net.seeds[3];
+  await page.evaluate(() => { setSettings({...getSettings(), mode: 'none', color: '#abcdef'}); render(); });
+  const lateAnswered = page.waitForResponse(picsumUrl(late));
+  release2(); await lateAnswered;
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-image', 'none');
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-color', 'rgb(171, 205, 239)');
+  expect(await picsumSaved(page)).toEqual({mode: 'none', seed: fast, date: '2026-10-01'});
+  await expect(page.locator('#changePictureBtn')).toBeHidden();
+});
+
+test('switching to and from Picsum in Settings keeps each mode\'s saved value; Bing stays disabled', async ({page}) => {
+  const net = await startPicsum(page, {settings: {mode: 'local', value: pixel, color: '#123456'}});
+  await net.reload();
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-image', `url("${pixel}")`);
+  await expect(page.locator('#changePictureBtn')).toBeHidden();
+  await page.locator('#settingsBtn').click();
+  await expect(page.locator('#wallpaperMode option[value="picsum"]')).toHaveText('Picsum daily (online photos)');
+  await expect(page.locator('#wallpaperMode option[value="bing"]')).toBeDisabled();
+  await expect(page.locator('#picsumHint')).toContainText('supplied online by picsum.photos');
+  await page.locator('#wallpaperMode').selectOption('picsum');
+  await expect(page.locator('#wallpaperValue')).toHaveValue('');
+  await page.locator('#saveSettingsBtn').click();
+  await picsumShown(page, 'daily-2026-10-01');
+  await expect(page.locator('#changePictureBtn')).toBeVisible();
+  expect(await page.evaluate(() => getSettings())).toMatchObject({mode: 'picsum', value: '', savedValues: {local: pixel}, picsumSeed: 'daily-2026-10-01', picsumDate: '2026-10-01'});
+  await page.locator('#changePictureBtn').click();
+  await expect.poll(() => net.seeds.length).toBe(2);
+  const chosen = net.seeds[1];
+  await picsumShown(page, chosen);
+  // Back to the local image: its data returns, and the Picsum choice stays saved for a later switch back.
+  await page.locator('#settingsBtn').click();
+  await page.locator('#wallpaperMode').selectOption('local');
+  await expect(page.locator('#wallpaperValue')).toHaveValue(pixel);
+  await page.locator('#saveSettingsBtn').click();
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-image', `url("${pixel}")`);
+  await expect(page.locator('#changePictureBtn')).toBeHidden();
+  expect(await page.evaluate(() => getSettings())).toMatchObject({mode: 'local', value: pixel, picsumSeed: chosen, picsumDate: '2026-10-01'});
+  await page.locator('#settingsBtn').click();
+  await page.locator('#wallpaperMode').selectOption('picsum');
+  await page.locator('#saveSettingsBtn').click();
+  await picsumShown(page, chosen);
+  expect(await saved(page)).toEqual(links);
+});
+
+test('backups keep the Picsum selection; older backups and invalid Picsum fields are handled', async ({page}) => {
+  const net = await startPicsum(page);
+  await net.reload();
+  await page.locator('#changePictureBtn').click();
+  await expect.poll(() => net.seeds.length).toBe(2);
+  const chosen = net.seeds[1];
+  await picsumShown(page, chosen);
+  await expect.poll(() => picsumSaved(page)).toEqual({mode: 'picsum', seed: chosen, date: '2026-10-01'});
+  const downloadPromise = page.waitForEvent('download'); await page.locator('#exportBtn').click();
+  const file = await (await downloadPromise).path();
+  const backup = JSON.parse(require('node:fs').readFileSync(file, 'utf8'));
+  expect(backup.settings).toMatchObject({mode: 'picsum', picsumSeed: chosen, picsumDate: '2026-10-01'});
+  expect(backup.links).toEqual(links);
+  // Importing it over a different dashboard restores the same picture, and a reload keeps it.
+  await page.evaluate(() => { setLinks([]); setSettings({mode: 'none', color: '#000000'}); render(); });
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-image', 'none');
+  await page.locator('#importFile').setInputFiles(file);
+  await picsumShown(page, chosen);
+  expect(await saved(page)).toEqual(links);
+  await net.reload();
+  await picsumShown(page, chosen);
+  // Imported on a later day, the same backup shows that day's picture.
+  await page.clock.setFixedTime(new Date('2026-10-05T09:00:00'));
+  await page.locator('#importFile').setInputFiles(file);
+  await picsumShown(page, 'daily-2026-10-05');
+  // A backup written before Picsum existed still imports and shows its own wallpaper.
+  const older = {links: links.slice(0, 3), settings: {mode: 'none', value: '', color: '#654321', maxTiles: 6, colsMax: 3}};
+  await page.locator('#importFile').setInputFiles({name: 'older.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(older))});
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-color', 'rgb(101, 67, 33)');
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-image', 'none');
+  await expect(page.locator('#changePictureBtn')).toBeHidden();
+  expect(await saved(page)).toEqual(links.slice(0, 3));
+  // Malformed Picsum fields are rejected or ignored without sending them to the provider.
+  const alerts = []; page.on('dialog', dialog => { alerts.push(dialog.message()); dialog.accept(); });
+  const before = await page.evaluate(() => localStorage.getItem('startpage.settings.v1'));
+  await page.locator('#importFile').setInputFiles({name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({links: [], settings: {mode: 'picsum', picsumSeed: 42}}))});
+  await expect.poll(() => alerts.length).toBe(1);
+  expect(await page.evaluate(() => localStorage.getItem('startpage.settings.v1'))).toBe(before);
+  await page.locator('#importFile').setInputFiles({name: 'odd.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({links: links.slice(0, 3), settings: {mode: 'picsum', picsumSeed: '../../evil?x=1', picsumDate: '2026-10-05'}}))});
+  await picsumShown(page, 'daily-2026-10-05');
+  expect(net.seeds.some(seed => seed.includes('evil'))).toBe(false);
+});

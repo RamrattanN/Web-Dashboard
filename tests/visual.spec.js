@@ -13,12 +13,22 @@ const viewports = {desktop: {width: 1440, height: 900}, tablet: {width: 820, hei
 const titles = ['Mail', 'Calendar', 'A very long saved link title that must truncate cleanly', 'Banking', 'Docs', 'News', 'Maps', 'Photos', 'Weather'];
 const links = titles.map((title, i) => ({url: `https://example.com/${i}`, title, group: ['Work', 'Personal', 'Finance'][i % 3], desc: i % 4 === 3 ? '' : `Description for ${title.toLowerCase()} with enough words to need clamping`, icon: ''}));
 
+// A flat grey PNG standing in for a Picsum photo.
+const zlib = require('node:zlib');
+function png(size) {
+  const crc = buf => { let c = ~0; for (const b of buf) { c ^= b; for (let k = 0; k < 8; k++) c = c & 1 ? (c >>> 1) ^ 0xEDB88320 : c >>> 1; } return ~c >>> 0; };
+  const chunk = (type, data) => { const body = Buffer.concat([Buffer.from(type), data]); const o = Buffer.alloc(body.length + 8); o.writeUInt32BE(data.length, 0); body.copy(o, 4); o.writeUInt32BE(crc(body), body.length + 4); return o; };
+  const header = Buffer.alloc(13); header.writeUInt32BE(size, 0); header.writeUInt32BE(size, 4); header[8] = 8; header[9] = 0;
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', header), chunk('IDAT', zlib.deflateSync(Buffer.alloc((size + 1) * size, 0x70))), chunk('IEND', Buffer.alloc(0))]);
+}
+
 // Reduced motion keeps computed colours and screenshots free of half-finished transitions.
 test.use({contextOptions: {reducedMotion: 'reduce'}});
 
 // `state` is null for a brand-new profile, a settings object, or a function producing one in the page.
 async function open(page, state) {
   await page.route(/^https:\/\//, route => route.abort());
+  await page.route(/^https:\/\/picsum\.photos\/seed\//, route => route.fulfill({contentType: 'image/png', body: png(64)}));
   await page.goto(url);
   const settings = typeof state === 'function' ? await state(page) : state;
   await page.evaluate(({links, settings}) => {
@@ -47,6 +57,7 @@ const states = {
   fresh: null,
   dark: {mode: 'none', color: '#0b1120'},
   photo: async page => ({mode: 'local', value: await photo(page)}),
+  picsum: {mode: 'picsum', color: '#0b1120'},
 };
 
 for (const [size, viewport] of Object.entries(viewports)) for (const state of Object.keys(states)) {
@@ -54,6 +65,8 @@ for (const [size, viewport] of Object.entries(viewports)) for (const state of Ob
     await page.setViewportSize(viewport);
     await open(page, states[state]);
     if (state === 'photo') await expect(page.locator('#wallpaper')).toHaveCSS('background-image', /^url\("data:image\/jpeg/);
+    if (state === 'picsum') await expect(page.locator('#wallpaper')).toHaveCSS('background-image', /^url\("https:\/\/picsum\.photos\/seed\/daily-/);
+    await expect(page.locator('#changePictureBtn')).toBeVisible({visible: state === 'picsum'});
     await shot(page, `${size}-${state}`, {fullPage: true});
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
@@ -61,7 +74,7 @@ for (const [size, viewport] of Object.entries(viewports)) for (const state of Ob
     const header = await page.locator('.app-header').boundingBox();
     expect(header.width).toBeGreaterThanOrEqual(width - 1);
     expect(await page.locator('#grid .card').first().evaluate(el => getComputedStyle(el).transitionDuration)).toMatch(/^0s/);
-    for (const id of ['#addBtn', '#importBtn', '#exportBtn', '#settingsBtn', '#logo']) {
+    for (const id of ['#addBtn', '#importBtn', '#exportBtn', '#settingsBtn', '#logo'].concat(state === 'picsum' ? ['#changePictureBtn'] : [])) {
       const box = await page.locator(id).boundingBox();
       expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x + box.width).toBeLessThanOrEqual(width);
     }
@@ -96,7 +109,7 @@ test('visual review: text contrast meets 4.5:1 on pale, dark and image wallpaper
       const lum = ([r, g, b]) => [r, g, b].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
       const surface = el => { for (let n = el; n; n = n.parentElement) { const b = parse(getComputedStyle(n).backgroundColor); if (b.length < 4 || b[3] === 1) return b; if (b[3] > 0) return null; } return null; };
       const ratio = (fg, bg) => { const [a, b] = [lum(fg), lum(bg)].sort((x, y) => y - x); return (a + 0.05) / (b + 0.05); };
-      const checks = {'.tip': null, '.card .title': null, '.card .desc': null, '.pill:not(.active)': null, '.pill.active': null, '.search .engine': null, '.search input': '::placeholder', '.header-action.with-label span': null, '.action-btn span': null, '#duckStatus': null};
+      const checks = {'.tip': null, '.card .title': null, '.card .desc': null, '.pill:not(.active)': null, '.pill.active': null, '.search .engine': null, '.search input': '::placeholder', '.header-action.with-label span': null, '.action-btn span': null, '#duckStatus': null, '#wallpaperStatus span': null, '#wallpaperRetry': null, '#picsumHint': null};
       return [...Object.entries(checks), ['#duckStatus', 'error']].map(([selector, pseudo]) => {
         const el = document.querySelector(selector); if (!el) return {selector, missing: true};
         if (pseudo === 'error') { el.classList.add('error'); pseudo = null; selector += '.error'; }
@@ -223,4 +236,28 @@ for (const size of ['desktop', 'phone']) test(`visual review: ${size} dialogs fi
   await page.locator('#urlInput').focus();
   await shot(page, `${size}-link-dialog`);
   expect(await visible('#saveLinkBtn')).toBe(true);
+});
+
+test('visual review: Picsum failure message, retry button and Settings explanation', async ({page}) => {
+  await page.setViewportSize(viewports.desktop);
+  await open(page, states.picsum);
+  await expect(page.locator('#changePictureBtn')).toHaveCSS('display', 'inline-flex');
+  await page.route(/^https:\/\/picsum\.photos\/seed\/pick-/, route => route.abort());
+  await page.locator('#changePictureBtn').click();
+  await expect(page.locator('#wallpaperStatus')).toBeVisible();
+  await expect(page.getByRole('button', {name: 'Try again', exact: true})).toBeVisible();
+  const retry = await page.locator('#wallpaperRetry').boundingBox();
+  expect(retry.width).toBeGreaterThan(70); // the text button must not collapse to an icon square
+  await page.locator('#changePictureBtn').hover();
+  await shot(page, 'desktop-picsum-failed');
+  await page.setViewportSize(viewports.phone);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+  expect((await page.locator('#wallpaperRetry').boundingBox()).width).toBeGreaterThan(70);
+  await shot(page, 'phone-picsum-failed', {fullPage: true});
+  await page.setViewportSize(viewports.desktop);
+  await page.locator('#settingsBtn').click();
+  await expect(page.locator('#wallpaperMode')).toHaveValue('picsum');
+  await page.locator('#wallpaperFile').focus();
+  await expect(page.locator('#picsumHint')).toBeVisible();
+  await shot(page, 'desktop-settings-wallpaper-picsum');
 });

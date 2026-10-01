@@ -110,3 +110,9 @@ Entries marked Backlog record future work only: export destination selection, re
 - Status: Implemented on the recovery branch and accepted by the owner on 2026-10-01 at `0c22c32` (ChatGPT icon shown after Refresh icon and after reload; other tile icons unchanged).
 - Reported: 2026-10-01.  The ChatGPT tile showed a grey letter instead of its icon.
 - Delivered: icons are requested without a CORS requirement, legacy `chat.openai.com` tiles use the `chatgpt.com` icon without changing the saved URL, placeholder images are skipped, and stale cached sources recover.  Details and evidence are in BASELINE.md.
+
+### Wallpaper: Picsum daily
+
+- Status: Implemented on the recovery branch on 2026-10-01; **owner acceptance on the real dashboard pending**.
+- Background: the owner's isolated investigation showed Picsum images load directly in Chrome on macOS from `file://` and localhost.
+- Delivered: a Picsum daily mode seeded by the local date, a Change picture button, same-day persistence of the loaded picture, failure retention with Try again, and backup compatibility.  Bing daily remains disabled and unchanged.  Details and evidence are in BASELINE.md.
