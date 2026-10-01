@@ -126,3 +126,19 @@ test('invalid backup leaves existing data unchanged', async ({page}) => {
     expect(await page.evaluate(() => localStorage.getItem('startpage.settings.v1'))).toBe(before);
   }
 });
+
+test('live Bing browser probe records provider outcome and preserves fallback on failure', async ({page}) => {
+  test.skip(!process.env.LIVE_BING, 'Opt-in network diagnostic; deterministic tests cover success/failures.');
+  await setup(page, {mode:'local', value:pixel});
+  await expect(page.locator('#wallpaper')).toHaveCSS('background-image', `url("${pixel}")`);
+  await page.route('https://www.bing.com/**', route => route.continue());
+  const evidence = [];
+  page.on('console', message => evidence.push(message.type() + ': ' + message.text()));
+  page.on('requestfailed', request => evidence.push('request failed: ' + request.url() + ' ' + request.failure()?.errorText));
+  page.on('response', response => {if(response.url().includes('bing.com')) evidence.push('HTTP ' + response.status() + ': ' + response.url());});
+  await page.evaluate(async () => {setSettings({...getSettings(), mode:'bing', value:'en-US'}); await applyWallpaper();});
+  const background = await page.locator('#wallpaper').evaluate(el => el.style.backgroundImage);
+  const success = background.includes('https://www.bing.com/');
+  if (!success) await expect(page.locator('#wallpaper')).toHaveCSS('background-image', `url("${pixel}")`);
+  console.log('LIVE BING: ' + (success ? 'image loaded' : 'provider unavailable; previous image preserved') + '\n' + evidence.join('\n'));
+});

@@ -16,3 +16,7 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm test
+      - name: Live Bing diagnostic
+        run: npx playwright test --grep 'live Bing browser probe'
+        env:
+          LIVE_BING: '1'
