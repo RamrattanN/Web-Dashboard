@@ -29,4 +29,49 @@
   - Preserve existing setting behaviour, defaults, persistence, and import/export compatibility.
   - Keep headings, labels, keyboard navigation, and scrolling usable on narrow screens.
 
+### Recent activity: expandable table and Chrome integration
+
+- Status: Backlog.  Plan for the next feature phase after functional recovery and acceptance.
+- Agreed: 2026-10-01.
+- User need: Help users resume relevant browsing activity, including on first use.  Chrome browsing activity is more useful for this purpose than dashboard-only activity, which initially has no entries.
+
+#### Shared presentation and behaviour
+
+- Place a recent-items section below the dashboard tiles.
+- Provide Show more / Show less to expand or collapse the section without changing saved tile layout.
+- Display up to 10 unique URLs, newest activity first, in a table inside a card with a fixed maximum height and internal scrolling.
+- Show site icon, title, domain, and last-viewed time.  Clicking a row opens its link in a new tab.
+- Reopening a URL updates its activity timestamp and moves it to the top.
+- Hide the entire section when there are no qualifying entries, with no empty card or reserved whitespace.
+- Provide Clear recent items on the same screen within the card.
+
+#### Timestamp-based clearing
+
+- Clearing records a persistent clearedAt timestamp and immediately hides the card.
+- Include only activity with a viewedAt timestamp strictly later than clearedAt.
+- Reopening an older URL after clearing qualifies as new activity.
+- The next qualifying activity makes the section reappear.
+- Reloading preserves the clearing cutoff.
+- Clearing affects the dashboard's recent-activity display only.  It does not delete saved tiles or Chrome browsing history.
+- Pending activity reads must respect the latest cutoff so an older response cannot repopulate a cleared card.
+
+#### Delivery modes
+
+- Standalone dashboard: retain the single-file, no-build setup and record links opened through the dashboard.  Hide the recent-items section until activity exists.
+- Chrome-integrated dashboard: plan an extension-based mode using permitted Chrome history access after the user grants permission.  Use existing recent history to populate the card on first use when available.
+- Keep the standalone version available alongside Chrome integration.
+- If history is empty, access is declined or revoked, or integration is unavailable, do not display blank placeholders or fabricate activity.  Use the standalone fallback where applicable.
+- Do not promise synced cross-device tabs or history as part of this scope; the screenshot is a presentation reference.  Verify actual history API coverage during extension design.
+
+#### Acceptance and implementation planning
+
+- Verify first use with existing Chrome history, first use without history, and permission denial or revocation.
+- Verify ordering, deduplication, the 10-item limit, internal scrolling, and keyboard access.
+- Verify clearing, reload persistence, repeated clearing, and reopening a previously cleared URL.
+- Verify new qualifying activity reappears after clearing, including while the dashboard stays open in integrated mode.
+- Define refresh timing and extension packaging during implementation planning.
+- Keep recent activity local.  Decide backup treatment explicitly so importing an older dashboard backup cannot unintentionally undo a clearing cutoff.
+- Preserve existing tiles, settings, import/export, and drag behaviour.
+- This entry documents the agreed design only; implementation is deferred.
+
 These entries record future work only.  Application behaviour is unchanged.
