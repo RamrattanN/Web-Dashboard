@@ -449,3 +449,8 @@ Release preparation changes the visible version label to v1.5.1 and reconciles d
 Accepted platform: normal Chrome on macOS.  CI uses Linux Chromium with intercepted provider responses.  Safari, Windows and real touch devices remain unverified.  Bing wallpaper remains disabled; recent activity, export destination selection and the F5/F6 follow-ups remain deferred.
 
 PR #3 was squash-merged into `main` at `5ab4c00f590bdc992358145684495cfa8dd87bc5` after both release-preparation CI runs passed at `a1df90c`.  Publication was initially paused by automatic approval review.  On 2026-10-02 (America/Chicago), the owner explicitly instructed "fix that, tag, and release".  [GitHub Release v1.5.1](https://github.com/RamrattanN/Web-Dashboard/releases/tag/v1.5.1) was then published, with the tag pointing to `901807ffe49504b8882d60a8d80c93fcfeccdae2`.  Main CI at that target passed ([36966697253](https://github.com/RamrattanN/Web-Dashboard/actions/runs/36966697253)).  The release is public, not a draft or prerelease; source ZIP and tar.gz archives are available.  Later documentation updates do not move the release tag.
+
+
+## Continue with these tabs - development
+
+The standalone card is under development on `feature/continue-with-tabs`, version `v1.5.2-dev`.  Owner acceptance and browser CI are pending.  It records dashboard shortcut openings and search submissions, not browser history or confirmed destination loads.  Recent data and the clearing cutoff stay outside backups.  The published v1.5.1 baseline and its acceptance records remain unchanged.

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Unreleased - v1.5.2-dev
+
+- Add a standalone Continue with these tabs card with ten unique recent dashboard links, expansion, scrolling and timestamp-based Clear.
+- Keep activity out of backups and preserve clearing across imports and reloads.  Chrome history integration remains deferred.
+
+
 ## v1.5.1 - 2026-10-02
 
 PR #3 is merged into main at `5ab4c00`.  [v1.5.1](https://github.com/RamrattanN/Web-Dashboard/releases/tag/v1.5.1) is published at tag target `901807f`, following explicit owner confirmation on 2026-10-02.

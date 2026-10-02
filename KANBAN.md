@@ -42,7 +42,7 @@ Current baseline: v1.5.1.  Final four-provider dashboard accepted by the owner a
 
 ### Recent activity: expandable table and Chrome integration
 
-- Status: Backlog.  Plan for the next feature phase after functional recovery and acceptance.
+- Status: In progress.  Standalone recent-links card implemented on `feature/continue-with-tabs`; CI and owner acceptance pending.  Chrome history extension remains Backlog.
 - Agreed: 2026-10-01.
 - User need: Help users resume relevant browsing activity, including on first use.  Chrome browsing activity is more useful for this purpose than dashboard-only activity, which initially has no entries.
 
@@ -83,7 +83,7 @@ Current baseline: v1.5.1.  Final four-provider dashboard accepted by the owner a
 - Define refresh timing and extension packaging during implementation planning.
 - Keep recent activity local.  Decide backup treatment explicitly so importing an older dashboard backup cannot unintentionally undo a clearing cutoff.
 - Preserve existing tiles, settings, import/export, and drag behaviour.
-- This entry documents the agreed design only; implementation is deferred.
+- Standalone implementation uses three collapsed rows, up to ten expanded rows, cached icons with letter fallbacks, and excludes activity from backups.  Records opening actions, not confirmed page views.  Chrome integration is deferred.
 
 
 ### Functional follow-ups from the PR #3 review

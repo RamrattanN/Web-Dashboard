@@ -1,4 +1,4 @@
-# WebDashboard - v1.5.1
+# WebDashboard - v1.5.2-dev
 
 A customizable single-page browser dashboard with tiles, groups, search, wallpaper, and layout settings.  This release builds on the v1.4.7 recovery starting point (`b08b98b`).  The owner accepted the final four-provider dashboard in Chrome on macOS at `9d172f1` on 2026-10-01.
 
@@ -117,3 +117,9 @@ Functional acceptance was completed on 2026-10-01 for Chrome on macOS using the 
 See [DESIGN_BASELINE.md](DESIGN_BASELINE.md) for the Ramrattan Rentals visual specification.  See [BASELINE.md](BASELINE.md) for recovery provenance, the evidence sources and verification limits, and a repeatable Mac checklist with a 16-link fixture. See
 [CHANGELOG.md](CHANGELOG.md) for changes and [SECURITY.md](SECURITY.md) for
 private vulnerability reporting. The v1.5.1 baseline contains the accepted recovery, visual refresh, Picsum wallpaper and four-provider search section.  [GitHub Release v1.5.1](https://github.com/RamrattanN/Web-Dashboard/releases/tag/v1.5.1) was published on 2026-10-02 at `901807f`.
+
+## Continue with these tabs (development)
+
+The recent-links card appears below the tiles after you open a shortcut or submit a search from the dashboard.  It shows three entries initially; Show more displays up to ten unique URLs in a scrolling table.  Reopening a link moves it to the top.  Clear recent items hides the card until another link is opened and persists across reloads.
+
+This standalone mode records dashboard actions, not Chrome browsing history or confirmed page views.  Search form submissions are recorded even if the browser later blocks the destination.  Recent activity stays in local browser storage and is excluded from JSON backups, so importing a backup cannot undo Clear.  Site titles come from the dashboard, and cached icons are reused with letter fallbacks.  Chrome history integration remains a separate extension feature.  This feature is not yet owner-accepted or released.
