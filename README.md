@@ -118,7 +118,9 @@ See [DESIGN_BASELINE.md](DESIGN_BASELINE.md) for the Ramrattan Rentals visual sp
 [CHANGELOG.md](CHANGELOG.md) for changes and [SECURITY.md](SECURITY.md) for
 private vulnerability reporting. The v1.5.1 baseline contains the accepted recovery, visual refresh, Picsum wallpaper and four-provider search section.  [GitHub Release v1.5.1](https://github.com/RamrattanN/Web-Dashboard/releases/tag/v1.5.1) was published on 2026-10-02 at `901807f`.
 
-## Continue with these tabs (development)
+## Continue with these tabs (unreleased, v1.5.2-dev)
+
+The standalone card was accepted by the owner on 2026-10-02 at `9888d53` in Chrome on macOS; see BASELINE.md.  It is not part of the published v1.5.1 release.  Chrome-history integration is a separate, deferred item.
 
 The recent-links card appears below the tiles after you open a shortcut or submit a search from the dashboard.  It shows three entries initially; Show more displays up to ten unique URLs in a scrolling table.  Reopening a link moves it to the top.  Clear recent items hides the card until another link is opened and persists across reloads.
 

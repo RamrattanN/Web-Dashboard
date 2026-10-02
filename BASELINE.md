@@ -451,6 +451,27 @@ Accepted platform: normal Chrome on macOS.  CI uses Linux Chromium with intercep
 PR #3 was squash-merged into `main` at `5ab4c00f590bdc992358145684495cfa8dd87bc5` after both release-preparation CI runs passed at `a1df90c`.  Publication was initially paused by automatic approval review.  On 2026-10-02 (America/Chicago), the owner explicitly instructed "fix that, tag, and release".  [GitHub Release v1.5.1](https://github.com/RamrattanN/Web-Dashboard/releases/tag/v1.5.1) was then published, with the tag pointing to `901807ffe49504b8882d60a8d80c93fcfeccdae2`.  Main CI at that target passed ([36966697253](https://github.com/RamrattanN/Web-Dashboard/actions/runs/36966697253)).  The release is public, not a draft or prerelease; source ZIP and tar.gz archives are available.  Later documentation updates do not move the release tag.
 
 
-## Continue with these tabs - development
+## Continue with these tabs - standalone card accepted by the owner at `9888d53`
 
-The standalone card is under development on `feature/continue-with-tabs`, version `v1.5.2-dev`.  Owner acceptance is pending.  Browser CI passed at `74192f8` in push run 36970349196 and pull-request run 36970355696: 77 passed, 1 skipped, 0 failed each.  The separate live Bing diagnostic verified fallback after provider failure.  Desktop and phone CI screenshots were inspected; they use synthetic activity and blocked remote icons.  No browser was launched locally: the Chromium download returned a truncated archive.  It records dashboard shortcut openings and search submissions, not browser history or confirmed destination loads.  Recent data and the clearing cutoff stay outside backups.  The published v1.5.1 baseline and its acceptance records remain unchanged.
+The standalone card is on `feature/continue-with-tabs`, version `v1.5.2-dev`, in draft PR #6.  It is not merged or released.  Owner acceptance of the standalone card is recorded below.  Browser CI passed at `74192f8` in push run 36970349196 and pull-request run 36970355696: 77 passed, 1 skipped, 0 failed each.  The separate live Bing diagnostic verified fallback after provider failure.  Desktop and phone CI screenshots were inspected; they use synthetic activity and blocked remote icons.  No browser was launched locally: the Chromium download returned a truncated archive.  It records dashboard shortcut openings and search submissions, not browser history or confirmed destination loads.  Recent data and the clearing cutoff stay outside backups.  The published v1.5.1 baseline and its acceptance records remain unchanged.
+
+### Owner acceptance of the standalone card - 2026-10-02, at `9888d53`
+
+Nilesh Ramrattan tested the card by hand at `9888d53190b1fa06dc8c976685e5952788a8a44e` in normal Chrome on macOS, in the Dashboard Test profile, with the repository's `index.html` opened from `file://`.  The Chrome version was not recorded.  The four checks were set by the owner; the results below are the owner's reports and nothing more is claimed.  No agent-driven browser testing took place.
+
+| Check | Expectation set by the owner | Owner's reported result |
+| --- | --- | --- |
+| A | Open four different shortcut tiles.  Three recent links initially; Show more displays all four; Show less returns to three | Pass.  "Four different tiles opened.  Show more displayed all four recent links; Show less returned to three." |
+| B | Reopen a link from its tile or the recent-links card.  It moves to the top with an updated time, appearing only once | Passed |
+| C | Click Clear recent items, then reload.  The entire card disappears and remains hidden | Passed |
+| D | Open another shortcut tile.  The card returns with only that link and no Show more button | Passed |
+
+Before the checks, the branch, commit, clean working tree and CI were verified: at `9888d53` both the [pull-request run](https://github.com/RamrattanN/Web-Dashboard/actions/runs/36970586164) and the [push run](https://github.com/RamrattanN/Web-Dashboard/actions/runs/36970582987) passed with 77 passed, 1 skipped, 0 failed.  The skipped test is the opt-in live Bing wallpaper probe, which runs in its own step.
+
+Scope of this acceptance:
+
+- It covers the standalone card only: links opened from the dashboard, the three-row and expanded views, reordering on reopen, Clear and its persistence across reload, and the card returning after new activity.
+- Not checked by the owner in this session: search submissions appearing in the card, the ten-link limit and scrolling, keyboard use, storage-failure messages, and backup behaviour.  Those are covered by CI only.
+- Recent activity and the clearing cutoff remain excluded from backups.
+- The Chrome-history extension is a separate, deferred item.  It is not implemented and is not covered by this acceptance.
+- Safari, Windows and touch devices remain unverified.  The published v1.5.1 baseline and its acceptance records are unchanged.

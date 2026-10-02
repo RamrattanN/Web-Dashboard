@@ -42,7 +42,8 @@ Current baseline: v1.5.1.  Final four-provider dashboard accepted by the owner a
 
 ### Recent activity: expandable table and Chrome integration
 
-- Status: In progress.  Standalone recent-links card implemented on `feature/continue-with-tabs`; Browser CI passed at `74192f8` (77 passed, 1 skipped in both runs); owner acceptance pending.  Chrome history extension remains Backlog.
+- Status: Standalone recent-links card implemented on `feature/continue-with-tabs` and accepted by the owner on 2026-10-02 at `9888d53` (Chrome on macOS, Dashboard Test profile, `file://`; four checks reported passed; see BASELINE.md).  Browser CI passed at `9888d53` (77 passed, 1 skipped in both runs).  Draft PR #6 is not merged or released.
+- Status of Chrome integration: Backlog.  The Chrome history extension is a separate item, not implemented and not covered by the standalone acceptance.
 - Agreed: 2026-10-01.
 - User need: Help users resume relevant browsing activity, including on first use.  Chrome browsing activity is more useful for this purpose than dashboard-only activity, which initially has no entries.
 
@@ -94,7 +95,7 @@ Current baseline: v1.5.1.  Final four-provider dashboard accepted by the owner a
 - Import of hand-edited backups (review finding F6): numeric settings written as strings, such as `"maxTiles": "3"`, are rejected.  Backups written by the dashboard are unaffected.  Any change must keep validation strict rather than loosen it.
 - Duck.ai search panel: delivered on 2026-10-01 as a copy-and-open flow and accepted by the owner at `327ff8c`; later removed at the owner's direction when DuckDuckGo web search was restored (see "Search section: four providers").  Direct prompt transfer to Duck.ai is no longer planned.  For the record: DuckDuckGo's `!ai` route failed this on 2026-10-01 in Chrome on macOS (`https://duckduckgo.com/?q=%21ai+dashboard+prompt+test+12345` opened ordinary search results) and must not be used; DuckDuckGo search parameters also do not carry over (`duckduckgo.com/chat?q=…` redirects to `duck.ai/chat` without the text).
 
-Entries marked Backlog record future work only: export destination selection, recent activity, the remaining functional follow-ups (including the F5 fallback and F6) and Bing daily are not implemented.
+Entries marked Backlog record future work only: export destination selection, Chrome-history integration for recent activity, the remaining functional follow-ups (including the F5 fallback and F6) and Bing daily are not implemented.
 
 
 
