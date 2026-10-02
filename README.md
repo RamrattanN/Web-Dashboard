@@ -2,6 +2,12 @@
 
 A customizable single-page browser dashboard with tiles, groups, search, wallpaper, and layout settings.  This release builds on the v1.4.7 recovery starting point (`b08b98b`).  The owner accepted the final four-provider dashboard in Chrome on macOS at `9d172f1` on 2026-10-01.
 
+## Preview
+
+![WebDashboard v1.5.2 with four search providers, shortcut tiles and the expanded Continue with these tabs card](docs/images/web-dashboard-v1.5.2.png)
+
+Owner screenshot from Chrome on macOS, 2026-10-02.  The expanded card shows links opened from the dashboard; it does not access Chrome browsing history.  Wallpaper, title, provider order and shortcuts are customizable.
+
 ## Run it
 
 1. Download [`index.html`](https://github.com/RamrattanN/Web-Dashboard/blob/v1.5.2/index.html) from the versioned baseline, or download and extract the Source code ZIP from the [v1.5.2 release](https://github.com/RamrattanN/Web-Dashboard/releases/tag/v1.5.2).
