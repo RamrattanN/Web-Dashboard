@@ -18,7 +18,7 @@ test('first use is hidden; tile tap and menu opening record and reopen a single 
   await expect(page.locator('#recentRows')).toContainText('Amazon');
   await page.locator('#recentRows a').click();
   await expect(page.locator('#recentRows tr')).toHaveCount(1);
-  await page.locator('#grid .card').nth(1).getByRole('button').click();
+  await page.locator('#grid .card').nth(1).getByRole('button', {name:'More actions for Google News',exact:true}).click();
   await page.locator('#grid .card').nth(1).getByRole('button',{name:'Open in new tab',exact:true}).click();
   await expect(page.locator('#recentRows tr')).toHaveCount(2);
   await page.reload();
