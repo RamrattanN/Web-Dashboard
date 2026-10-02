@@ -1,4 +1,4 @@
-# Recovery baseline — v1.5.0-dev (unreleased)
+# Release baseline - v1.5.1
 
 ## Provenance and scope
 
@@ -69,10 +69,9 @@ three-of-six acceptance scenarios). The figures above predate it. On
 [36897318872](https://github.com/RamrattanN/Web-Dashboard/actions/runs/36897318872))
 ran 28 tests: **27 passed, 1 skipped, 0 failed**. The skipped test is the
 opt-in live Bing probe; in its own step it passed its fallback assertion
-(Bing blocked the request by CORS and the previous image remained). Later
-commits on the branch change documentation only.
+(Bing blocked the request by CORS and the previous image remained). Later commits added the visual refresh, provider ordering, Picsum wallpaper and icon corrections; their evidence is recorded below.
 
-## Functional acceptance record — 2026-10-01
+## Functional acceptance record - 2026-10-01
 
 Each result names its source. **CI** is Playwright driving Chromium on Linux
 with intercepted network requests, at `443a334`. **Owner** is Nilesh
@@ -105,11 +104,11 @@ attempted browser-sidebar checks were blocked and provide no evidence.
 
 Not verified in any browser: Safari, Windows, and touch devices. Duck.ai
 prompt transfer through DuckDuckGo's `!ai` route was tested by the owner and
-**failed** (ordinary search results opened), so that panel change is deferred.
+**failed** (ordinary search results opened), that automatic transfer route was not used.  The later copy-and-open row was accepted, then removed in favour of ordinary DuckDuckGo search.
 The steps below are the original checklist, kept for repeating acceptance in
 another browser.
 
-## Visual refresh — accepted by the owner at `327ff8c`
+## Visual refresh - accepted by the owner at `327ff8c`
 
 The Ramrattan Rentals design in [DESIGN_BASELINE.md](DESIGN_BASELINE.md) was
 applied after the functional acceptance above. The functional record above
@@ -142,7 +141,7 @@ Evidence, by source:
 
 Safari was not checked by anyone.
 
-## Group filter and Duck.ai row — accepted by the owner at `327ff8c`
+## Group filter and Duck.ai row - accepted by the owner at `327ff8c`
 
 Added after the visual refresh, at the owner's request.
 
@@ -219,10 +218,10 @@ a manual step.
     npm test -- --workers=1
     LIVE_BING=1 npx playwright test --grep 'live Bing browser probe'
     ```
-    Repeat steps 2–9 in Safari if Safari support is required. Report browser
+    Repeat steps 2-9 in Safari if Safari support is required. Report browser
     version and results before treating that browser as accepted.
 
-## Owner visual acceptance — 2026-10-01, at `327ff8c`
+## Owner visual acceptance - 2026-10-01, at `327ff8c`
 
 Nilesh Ramrattan checked the following by hand in normal Chrome on macOS, in
 the Dashboard Test profile, with the dashboard opened from `file://`, and
@@ -245,7 +244,7 @@ reported all seven as passed:
 This acceptance covers `327ff8c`. The icon fix below came afterwards and has
 its own owner check. Safari, Windows and touch devices are not covered.
 
-## Tile icon fix — accepted by the owner at `0c22c32`
+## Tile icon fix - accepted by the owner at `0c22c32`
 
 Reported by the owner: the ChatGPT tile showed a grey letter instead of its
 icon. Cause, established by requesting each icon source directly:
@@ -295,7 +294,7 @@ handling and the official ChatGPT icon source are unchanged.
 | 16x16 and 32x32 icons display and are cached with no later fallback; cached icons at both sizes are reused with no rediscovery; 1px and failed sources advance to the next valid source; exhausted sources show the monogram; custom icons unchanged; ChatGPT icon tests still pass | CI (Linux Chromium) with decodable PNG fixtures of exact sizes supplied by the test | The dashboard's logic. Nothing is fetched from real icon services |
 | Effect on the owner's dashboard | Not separately checked by the owner | The owner's ChatGPT icon is 180px and is unaffected by the size limit |
 
-## Picsum daily wallpaper — accepted by the owner at `fd8b37e`
+## Picsum daily wallpaper - accepted by the owner at `fd8b37e`
 
 Added after the acceptances above; none of them covers it. Its own owner
 acceptance is recorded at the end of this section.
@@ -325,7 +324,7 @@ catalogue; there is no offline copy, so a reload without network shows the
 solid colour; the day changes only when the dashboard is opened, reloaded or
 redrawn, not on a timer.
 
-### Owner acceptance — 2026-10-01, at `fd8b37e`
+### Owner acceptance - 2026-10-01, at `fd8b37e`
 
 Nilesh Ramrattan checked the following by hand in normal Chrome on macOS, in
 the Dashboard Test profile, with the dashboard opened from `file://`, and
@@ -345,7 +344,7 @@ CI with a fixed clock only), a page served over `http`, and Safari, Windows
 and touch devices. The 16px icon-size correction in the same head was not
 separately checked by the owner.
 
-## Settings field alignment — accepted by the owner at `814a2cd`
+## Settings field alignment - accepted by the owner at `814a2cd`
 
 Reported by the owner after the Picsum acceptance and recorded separately
 from it: in the Wallpaper group the "Image URL, keyword, or Bing market"
@@ -362,12 +361,11 @@ on narrow screens. No control or behaviour changed.
 | Desktop and phone screenshots of the Wallpaper group | Agent inspection of the CI screenshots | Linux Chromium rendering, not the owner's Mac |
 | The alignment adjustment looks correct | Owner, Chrome on macOS, Dashboard Test profile, at `814a2cd`, 2026-10-01 | A visual confirmation of the adjustment as a whole. The owner did not report results for individual checklist steps |
 
-## Search section: six providers, new tabs and reordering — superseded, never accepted
+## Search section: six providers, new tabs and reordering - superseded
 
 This section is kept as a historical record. The six-provider design at
-`a9c8bb9` was replaced by the four-provider design described in the next
-section before the owner accepted it. Its findings on prompt transfer remain
-valid as findings; its behaviour, tests and "pending" row no longer apply.
+`a9c8bb9` received the owner's report that everything worked, but the owner disliked the AI interaction design.  Functional checks passed as owner-reported; the interaction design was superseded at the owner's request by the four-provider design below. Its findings on prompt transfer remain
+valid as findings; its behaviour and tests are retained as historical evidence.
 
 Added after every acceptance above; none of them covers it. The Duck.ai row
 accepted at `327ff8c` keeps its behaviour and wording, with the provider name
@@ -398,11 +396,11 @@ hides the four AI providers.
 | Reorder by grip forwards and backwards across rows; no reorder from the input, label or other controls; text selection in the input works; typed text preserved; cancelled drag restores; reload persistence; tile order untouched | CI with real mouse input | |
 | Move earlier / Move later menu, arrow keys, disabled ends, focus kept, announcements, hidden providers keep their places | CI with real keyboard input | |
 | Backups: order exported and imported; backups without an order; unknown and duplicate ids; malformed values rejected | CI | |
-| Six boxes, 80–120px of room at desktop and tablet sizes and 16–40px on a phone, two columns then one, no horizontal overflow, focus indicator on all 47 keyboard stops, grip tooltip, move menu not covered | CI layout assertions | |
+| Six boxes, 80-120px of room at desktop and tablet sizes and 16-40px on a phone, two columns then one, no horizontal overflow, focus indicator on all 47 keyboard stops, grip tooltip, move menu not covered | CI layout assertions | |
 | Appearance of the new layout, grip tooltip and move menu | Agent inspection of the CI screenshots | Linux Chromium, not the owner's Mac |
-| Real providers and the owner's browser: new tabs, encoding as seen by the sites, pasting into ChatGPT and Claude, dragging with a real pointer | **Pending owner acceptance** | |
+| Real providers and the owner's browser: new tabs, encoding as seen by the sites, pasting into ChatGPT and Claude, dragging with a real pointer | Owner reported everything worked at `a9c8bb9`; interaction design superseded | General owner confirmation, not individual checklist results |
 
-## Search section: four providers — implemented, owner acceptance pending
+## Search section: four providers - accepted by the owner at `9d172f1`
 
 This supersedes the six-provider section above. It also supersedes the
 Duck.ai row accepted at `327ff8c`: that row and its Copy & open workflow no
@@ -438,4 +436,14 @@ DuckDuckGo and Perplexity".
 | Reorder by grip, menu and arrow keys; typed text kept; cancelled drag; grip still clickable after a drag; reload persistence; tile order untouched | CI with real mouse and keyboard input | |
 | Order migration for stored settings (seven cases) and for a six-box backup with a ChatGPT tile; export and import; backups without an order; unknown ids; malformed values rejected | CI | |
 | Four boxes in two columns then one, space under the header, no horizontal overflow, focus indicator on all 35 keyboard stops, empty-search message | CI layout assertions and agent inspection of the CI screenshots | Linux Chromium, not the owner's Mac |
-| Real providers and the owner's browser | **Pending owner acceptance** | |
+| Real providers and the owner's browser | Owner reported "All looks good" at `9d172f1`, Chrome on macOS, Dashboard Test profile, local `file://` | Overall acceptance; individual checklist steps and exact Chrome version were not separately recorded |
+
+## Published baseline - v1.5.1
+
+On 2026-10-01 (America/Chicago), Nilesh Ramrattan reported "All looks good" for the final four-provider revision at `9d172f10ce11331dd3abfd6dadb559523c80ba4b` and authorised baselining, documentation updates and publication.  This is an overall owner acceptance, not a claim of separately reported results for every checklist item.
+
+At that application head, both [pull-request CI](https://github.com/RamrattanN/Web-Dashboard/actions/runs/36964820120) and [push CI](https://github.com/RamrattanN/Web-Dashboard/actions/runs/36964815886) succeeded: 69 passed, 1 skipped, 0 failed.  The skipped live Bing wallpaper probe runs separately and demonstrated failure retention, not successful Bing image loading.
+
+Release preparation changes the visible version label to v1.5.1 and reconciles documentation; it does not change accepted application behaviour.  The pre-existing v1.5.0 tag points to unfinished feature work and is preserved as historical provenance.  Use v1.5.1 for this accepted baseline.
+
+Accepted platform: normal Chrome on macOS.  CI uses Linux Chromium with intercepted provider responses.  Safari, Windows and real touch devices remain unverified.  Bing wallpaper remains disabled; recent activity, export destination selection and the F5/F6 follow-ups remain deferred.

@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Unreleased — v1.5.0-dev recovery
+## v1.5.1 - 2026-10-01
 
 - Recovered optional Bing wallpaper from the unfinished feature branch into
   one loader using `startpage.settings.v1`; removed the need for injected
@@ -55,7 +55,7 @@
   so favicon and image requests reached the network. It now blocks every
   https request. A visual-review spec checks overflow, contrast, focus
   indicators, control names and dialog scrolling, and uploads screenshots as
-  a CI artifact. Owner visual acceptance on macOS is still pending.
+  a CI artifact. Owner visual acceptance on macOS was recorded at `327ff8c`; later alignment and four-provider acceptance are recorded in BASELINE.md.
 - Group bar: an explicit **All** button comes first, is highlighted when no
   filter is set, and clears the filter in one click. Only the selected group
   is highlighted otherwise; a second click on it still returns to All. A
@@ -124,12 +124,12 @@
 - The visibility setting now reads "Show DuckDuckGo and Perplexity"; its
   stored key (`showExtraSearch`) and effect on the secondary providers are
   unchanged. Shortcut tiles, including ChatGPT, are untouched.
-- The four-provider search section awaits owner acceptance.
+- The owner accepted the four-provider search section at `9d172f1` on 2026-10-01 and authorised publication.
 - Owner visual acceptance of the refresh, the All button and the Duck.ai row
   was given on 2026-10-01 at `327ff8c` (Chrome on macOS). The ChatGPT icon
   fix was accepted by the owner at `0c22c32`.
 
-## v1.4.7 — 2025-10-13
+## v1.4.7 - 2025-10-13
 ### Added
 - Robust version labels injected at runtime so they are always visible regardless of previous markup.
 

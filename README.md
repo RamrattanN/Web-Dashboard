@@ -1,10 +1,10 @@
-# WebDashboard — v1.5.0-dev (unreleased)
+# WebDashboard - v1.5.1
 
-A customizable single-page browser dashboard with tiles, groups, search, wallpaper, and layout settings.  The baseline starting point for this recovery is v1.4.7 (`b08b98b`); this branch is unreleased development.  No GitHub Release ZIP is currently published.
+A customizable single-page browser dashboard with tiles, groups, search, wallpaper, and layout settings.  This release builds on the v1.4.7 recovery starting point (`b08b98b`).  The owner accepted the final four-provider dashboard in Chrome on macOS at `9d172f1` on 2026-10-01.
 
 ## Run it
 
-1. For this unreleased recovery, download [`index.html`](https://github.com/RamrattanN/Web-Dashboard/blob/recovery/wallpaper-and-regressions/index.html) from the recovery branch.  The file on `main` is the earlier baseline and does not include this work.
+1. Download [`index.html`](https://github.com/RamrattanN/Web-Dashboard/blob/v1.5.1/index.html) from the versioned baseline, or use the source archive on the [v1.5.1 release page](https://github.com/RamrattanN/Web-Dashboard/releases/tag/v1.5.1).
 2. Open the file in a browser.  Configure tiles and layout using the Settings dialog.
 3. If you serve it from a web server, replace its `index.html` with this file and reload the page.
 
@@ -116,4 +116,4 @@ Functional acceptance was completed on 2026-10-01 for Chrome on macOS using the 
 
 See [DESIGN_BASELINE.md](DESIGN_BASELINE.md) for the Ramrattan Rentals visual specification.  See [BASELINE.md](BASELINE.md) for recovery provenance, the evidence sources and verification limits, and a repeatable Mac checklist with a 16-link fixture. See
 [CHANGELOG.md](CHANGELOG.md) for changes and [SECURITY.md](SECURITY.md) for
-private vulnerability reporting. No release is published by this recovery.
+private vulnerability reporting. The v1.5.1 release contains the accepted recovery, visual refresh, Picsum wallpaper and four-provider search section.

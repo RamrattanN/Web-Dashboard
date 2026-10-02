@@ -1,6 +1,6 @@
 # Visual baseline: Ramrattan Rentals
 
-Status: Approved visual direction.  Functional acceptance is complete; the visual refresh is in progress under Claude Code's authorised work order, with owner visual acceptance still pending.  Updated 2026-10-01.
+Status: Implemented and accepted.  Owner visual acceptance was recorded at `327ff8c`, alignment at `814a2cd`, and the final four-provider layout at `9d172f1`.  Included in the v1.5.1 release baseline.  Updated 2026-10-01.
 
 ## Reference
 
@@ -65,7 +65,7 @@ Default page: pale background with a subtle radial blue highlight, as in Rentals
 - Preserve solid-colour, local-image and static-image wallpaper functionality and saved choices.
 - Use the Rentals pale surface as the fresh-install visual default; do not overwrite existing users' wallpaper settings.
 - Keep cards and search controls readable over arbitrary wallpaper.  Supporting text needs an appropriate contrasting surface or treatment.
-- Correct the currently unreadable dashboard tip text.
+- Keep the corrected dashboard tip readable on its contrasting surface.
 - Give icon controls accessible names, visible keyboard focus, and hover/focus tooltips.
 - Keep responsive wrapping and respect reduced-motion preferences.
 - Avoid adding Rentals-specific roles, portfolio selectors, flags or sign-out controls to Web-Dashboard unless separately requested.

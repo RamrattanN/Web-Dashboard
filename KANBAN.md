@@ -1,5 +1,16 @@
 # Kanban
 
+Current baseline: v1.5.1.  Final four-provider dashboard accepted by the owner at `9d172f1` on 2026-10-01; publication authorised.  Historical accepted commits are recorded in BASELINE.md.
+
+## Delivered in v1.5.1
+
+- Functional recovery: safe tile ordering, layout lock, dialog cancellation and wallpaper handling.
+- Rentals visual refresh, grouped Settings, paired-field alignment and explicit All filter.
+- ChatGPT favicon recovery and 16px icon-size correction (CI verified).
+- Picsum daily wallpaper, Change picture, reload persistence and failure/retry handling.
+- Google, Bing, DuckDuckGo and Perplexity search in new tabs; provider drag/keyboard ordering and backup migration.
+
+
 ## Backlog
 
 ### Export backup: choose filename and destination
@@ -74,9 +85,27 @@
 - Preserve existing tiles, settings, import/export, and drag behaviour.
 - This entry documents the agreed design only; implementation is deferred.
 
+
+### Functional follow-ups from the PR #3 review
+
+- Status: Backlog.  Recorded 2026-10-01; none of these block the recovery.
+- Bing daily wallpaper: disabled in Settings until a real Bing image is shown to load in a browser.  Bing blocks the request by CORS; re-enabling needs a verified approach and a separate decision on any proxy or backend.
+- Group filter with no matching group (review finding F5): after an import, or after removing or editing the last tile in the active group, the grid is empty.  The All button added on 2026-10-01 now clears such a filter in one click.  Still in Backlog: falling back to All automatically.
+- Import of hand-edited backups (review finding F6): numeric settings written as strings, such as `"maxTiles": "3"`, are rejected.  Backups written by the dashboard are unaffected.  Any change must keep validation strict rather than loosen it.
+- Duck.ai search panel: delivered on 2026-10-01 as a copy-and-open flow and accepted by the owner at `327ff8c`; later removed at the owner's direction when DuckDuckGo web search was restored (see "Search section: four providers").  Direct prompt transfer to Duck.ai is no longer planned.  For the record: DuckDuckGo's `!ai` route failed this on 2026-10-01 in Chrome on macOS (`https://duckduckgo.com/?q=%21ai+dashboard+prompt+test+12345` opened ordinary search results) and must not be used; DuckDuckGo search parameters also do not carry over (`duckduckgo.com/chat?q=…` redirects to `duck.ai/chat` without the text).
+
+Entries marked Backlog record future work only: export destination selection, recent activity, the remaining functional follow-ups (including the F5 fallback and F6) and Bing daily are not implemented.
+
+
+
+
+
+
+## Delivery history
+
 ### Visual refresh: adopt the Ramrattan Rentals design baseline
 
-- Status: Implemented on the recovery branch and visually accepted by the owner on 2026-10-01 at `327ff8c` (Chrome on macOS).  Evidence and limits are recorded in BASELINE.md.  Not merged or released.
+- Status: Implemented on the recovery branch and visually accepted by the owner on 2026-10-01 at `327ff8c` (Chrome on macOS).  Evidence and limits are recorded in BASELINE.md.  Included in the v1.5.1 baseline.
 - Requested: 2026-10-01.
 - User direction: Finish the existing Claude workload first.  Prepare the cosmetic implementation work order later.
 - Specification: [DESIGN_BASELINE.md](DESIGN_BASELINE.md), containing the pinned Rentals source reference, exact palette, typography, icon style, brand asset, surfaces, controls, and verification requirements.
@@ -88,16 +117,6 @@
   - Preserve existing users' wallpaper choices and all functional behaviour.
 - Acceptance: Verify desktop and narrow-screen presentation, contrast, keyboard focus, saved wallpapers, long titles, tile sizing and density controls, and existing functional regression checks.
 - Implementation was authorised on 2026-10-01 after functional acceptance was completed.
-
-### Functional follow-ups from the PR #3 review
-
-- Status: Backlog.  Recorded 2026-10-01; none of these block the recovery.
-- Bing daily wallpaper: disabled in Settings until a real Bing image is shown to load in a browser.  Bing blocks the request by CORS; re-enabling needs a verified approach and a separate decision on any proxy or backend.
-- Group filter with no matching group (review finding F5): after an import, or after removing or editing the last tile in the active group, the grid is empty.  The All button added on 2026-10-01 now clears such a filter in one click.  Still in Backlog: falling back to All automatically.
-- Import of hand-edited backups (review finding F6): numeric settings written as strings, such as `"maxTiles": "3"`, are rejected.  Backups written by the dashboard are unaffected.  Any change must keep validation strict rather than loosen it.
-- Duck.ai search panel: delivered on 2026-10-01 as a copy-and-open flow and accepted by the owner at `327ff8c`; later removed at the owner's direction when DuckDuckGo web search was restored (see "Search section: four providers").  Direct prompt transfer to Duck.ai is no longer planned.  For the record: DuckDuckGo's `!ai` route failed this on 2026-10-01 in Chrome on macOS (`https://duckduckgo.com/?q=%21ai+dashboard+prompt+test+12345` opened ordinary search results) and must not be used; DuckDuckGo search parameters also do not carry over (`duckduckgo.com/chat?q=…` redirects to `duck.ai/chat` without the text).
-
-Entries marked Backlog record future work only: export destination selection, recent activity, the remaining functional follow-ups (including the F5 fallback and F6) and Bing daily are not implemented.
 
 ### Group bar: explicit All button
 
@@ -120,13 +139,13 @@ Entries marked Backlog record future work only: export destination selection, re
 
 ### Search section: six providers, spacing and reordering
 
-- Status: Superseded on 2026-10-01 by "Search section: four providers" below, before owner acceptance.  Kept as a record.
+- Status: Superseded on 2026-10-01 by "Search section: four providers" below.  The owner reported that everything worked, but requested replacement of the AI interaction design.  Kept as a record.
 - Requested: 2026-10-01.
 - Delivered at the time: more space under the header; ChatGPT and Claude boxes added; Google and Bing open in a new tab; Copy & open for Duck.ai, ChatGPT and Claude; an Open link for every AI provider; drag, menu and arrow-key reordering saved as `providerOrder`.  Details and evidence are in BASELINE.md.
 - No longer planned in the search section: Duck.ai, ChatGPT and Claude boxes were removed by the owner's later instruction.
 
 ### Search section: four providers
 
-- Status: Implemented on the recovery branch on 2026-10-01; **owner acceptance pending**.
+- Status: Implemented and accepted by the owner at `9d172f1` on 2026-10-01 (overall confirmation: "All looks good").  Included in v1.5.1.
 - Requested: 2026-10-01.  Supersedes the six-provider section above.
 - Delivered: Google, Bing, DuckDuckGo (restored as ordinary web search) and Perplexity; all open the encoded query in a new tab; empty input shows a message; Duck.ai, ChatGPT and Claude boxes and the Copy & open workflow removed; reordering, persistence and backups kept; saved six-box orders migrated; visibility setting relabelled "Show DuckDuckGo and Perplexity" with its key unchanged.  Details and evidence are in BASELINE.md.
