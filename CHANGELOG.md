@@ -1,6 +1,8 @@
 # CHANGELOG
 
-## v1.5.1 - 2026-10-01
+## v1.5.1 - accepted baseline, release pending
+
+PR #3 is merged into main at `5ab4c00`.  GitHub tag/release publication remains pending explicit confirmation.
 
 - Recovered optional Bing wallpaper from the unfinished feature branch into
   one loader using `startpage.settings.v1`; removed the need for injected

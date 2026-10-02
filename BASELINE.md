@@ -438,7 +438,7 @@ DuckDuckGo and Perplexity".
 | Four boxes in two columns then one, space under the header, no horizontal overflow, focus indicator on all 35 keyboard stops, empty-search message | CI layout assertions and agent inspection of the CI screenshots | Linux Chromium, not the owner's Mac |
 | Real providers and the owner's browser | Owner reported "All looks good" at `9d172f1`, Chrome on macOS, Dashboard Test profile, local `file://` | Overall acceptance; individual checklist steps and exact Chrome version were not separately recorded |
 
-## Published baseline - v1.5.1
+## Accepted baseline - v1.5.1
 
 On 2026-10-01 (America/Chicago), Nilesh Ramrattan reported "All looks good" for the final four-provider revision at `9d172f10ce11331dd3abfd6dadb559523c80ba4b` and authorised baselining, documentation updates and publication.  This is an overall owner acceptance, not a claim of separately reported results for every checklist item.
 
@@ -447,3 +447,5 @@ At that application head, both [pull-request CI](https://github.com/RamrattanN/W
 Release preparation changes the visible version label to v1.5.1 and reconciles documentation; it does not change accepted application behaviour.  The pre-existing v1.5.0 tag points to unfinished feature work and is preserved as historical provenance.  Use v1.5.1 for this accepted baseline.
 
 Accepted platform: normal Chrome on macOS.  CI uses Linux Chromium with intercepted provider responses.  Safari, Windows and real touch devices remain unverified.  Bing wallpaper remains disabled; recent activity, export destination selection and the F5/F6 follow-ups remain deferred.
+
+PR #3 was squash-merged into `main` at `5ab4c00f590bdc992358145684495cfa8dd87bc5` after both release-preparation CI runs passed at `a1df90c`.  GitHub tag/release publication is pending explicit confirmation because automatic approval review retained the earlier no-tag/no-release restriction.  No v1.5.1 tag or release has been created.
