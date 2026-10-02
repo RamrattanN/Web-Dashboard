@@ -42,7 +42,7 @@ Current baseline: v1.5.1.  Final four-provider dashboard accepted by the owner a
 
 ### Recent activity: expandable table and Chrome integration
 
-- Status: In progress.  Standalone recent-links card implemented on `feature/continue-with-tabs`; CI and owner acceptance pending.  Chrome history extension remains Backlog.
+- Status: In progress.  Standalone recent-links card implemented on `feature/continue-with-tabs`; Browser CI passed at `74192f8` (77 passed, 1 skipped in both runs); owner acceptance pending.  Chrome history extension remains Backlog.
 - Agreed: 2026-10-01.
 - User need: Help users resume relevant browsing activity, including on first use.  Chrome browsing activity is more useful for this purpose than dashboard-only activity, which initially has no entries.
 
