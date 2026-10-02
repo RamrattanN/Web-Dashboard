@@ -141,6 +141,20 @@
     .search-status[hidden]{ display: none; }
     .search-status .action-btn{ margin-left: 10px; vertical-align: middle; }
 
+    .recent-card{ width: min(1200px, 96vw); box-sizing: border-box; margin-top: 24px; padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--white); color: var(--navy-deep); }
+    .recent-card[hidden], .recent-scroll[hidden]{ display: none; }
+    .recent-heading{ display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+    .recent-heading h2{ margin: 0; font-size: 1.15rem; margin-right: auto; }
+    .recent-note{ color: var(--muted); font-size: .85rem; }
+    .recent-scroll{ max-height: 320px; overflow: auto; }
+    .recent-table{ width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .recent-table th, .recent-table td{ padding: 10px 6px; text-align: left; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+    .recent-table th:last-child, .recent-table td:last-child{ width: 30%; }
+    .recent-link{ display: flex; align-items: center; gap: 10px; color: var(--navy-deep); }
+    .recent-link img, .recent-letter{ width: 24px; height: 24px; flex: 0 0 24px; object-fit: contain; }
+    .recent-letter{ text-align: center; background: var(--blue-pale); border-radius: 6px; }
+    .recent-link:focus-visible, .recent-scroll:focus-visible{ outline: 3px solid var(--blue); outline-offset: 2px; }
+    .recent-domain{ display: block; color: var(--muted); font-size: .8rem; }
     main{ display: grid; justify-items: center; align-content: start; padding: 6px 0 48px; }
     .grid-wrap{ width: min(1400px, 96vw); }
     .group-bar{ display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 2px; justify-content: center; }
@@ -332,6 +346,17 @@
         <div class="group-bar" id="groupBar"></div>
         <div class="grid" id="grid"></div>
       </div>
+      <section class="recent-card" id="recentCard" aria-labelledby="recentTitle" hidden>
+        <div class="recent-heading"><h2 id="recentTitle">Continue with these tabs</h2>
+          <button class="btn" type="button" id="recentToggle" aria-expanded="false" aria-controls="recentRows">Show more</button>
+          <button class="btn" type="button" id="recentClear">Clear recent items</button>
+        </div>
+        <p class="recent-note">Links opened from this dashboard.  Your Chrome history is not accessed.</p>
+        <div class="recent-scroll" tabindex="0" role="region" aria-label="Recent links">
+          <table class="recent-table"><thead><tr><th scope="col">Page</th><th scope="col">Last opened</th></tr></thead><tbody id="recentRows"></tbody></table>
+        </div>
+      </section>
+      <p class="search-status error" id="recentStatus" role="status" hidden></p>
     </main>
   </div>
 
@@ -501,11 +526,80 @@
     const ST_KEY = 'startpage.settings.v1';
     const IC_KEY = 'startpage.iconcache.v1';
         const APP_NAME='WebDashboard';
-        const VERSION='v1.5.1';
+        const VERSION='v1.5.2';
     const grid = document.getElementById('grid');
     const providerGrid = document.getElementById('providerGrid');
     const groupBar = document.getElementById('groupBar');
     const logo = document.getElementById('logo');
+
+    // Recent activity is local and deliberately excluded from dashboard backups.
+    // Importing an older backup cannot restore cleared activity or undo its cutoff.
+    const RECENT_KEY = 'startpage.recent.v1';
+    let recentExpanded = false;
+    function recentUrl(value){
+      try { const u = new URL(value); return ['https:', 'http:'].includes(u.protocol) ? u.href : null; } catch { return null; }
+    }
+    function getRecent(){
+      try {
+        const raw = JSON.parse(localStorage.getItem(RECENT_KEY) || '{}');
+        const clearedAt = Number.isFinite(raw.clearedAt) ? raw.clearedAt : 0;
+        const seen = new Set();
+        const items = (Array.isArray(raw.items) ? raw.items : [])
+          .filter(x => x && recentUrl(x.url) && Number.isFinite(x.viewedAt) && Math.abs(x.viewedAt) <= 8640000000000000 && x.viewedAt > clearedAt)
+          .sort((a,b) => b.viewedAt - a.viewedAt)
+          .filter(x => { const u = recentUrl(x.url); if(seen.has(u)) return false; seen.add(u); return true; })
+          .slice(0,10).map(x => ({url:recentUrl(x.url), title:typeof x.title === 'string' ? x.title : '', viewedAt:x.viewedAt}));
+        return {clearedAt, items};
+      } catch { return {clearedAt:0, items:[]}; }
+    }
+    function saveRecent(state){
+      const status = document.getElementById('recentStatus');
+      try { localStorage.setItem(RECENT_KEY, JSON.stringify(state)); status.hidden = true; return true; }
+      catch { status.textContent = 'Recent activity could not be saved.  Browser storage may be full or unavailable.'; status.hidden = false; return false; }
+    }
+    function recordRecent(url, title){
+      url = recentUrl(url); if(!url) return;
+      const state = getRecent();
+      const viewedAt = Math.max(Date.now(), state.clearedAt + 1, ...state.items.map(x => x.viewedAt + 1));
+      state.items = [{url, title:title || domainFromUrl(url), viewedAt}, ...state.items.filter(x => x.url !== url)].slice(0,10);
+      if(saveRecent(state)) renderRecent();
+    }
+    function openRecentLink(url, title){
+      const opened = window.open(url, '_blank');
+      if(opened !== null) recordRecent(url, title);
+      return opened;
+    }
+    function renderRecent(){
+      const items = getRecent().items;
+      const card = document.getElementById('recentCard');
+      card.hidden = !items.length;
+      const toggle = document.getElementById('recentToggle');
+      toggle.hidden = items.length <= 3;
+      toggle.textContent = recentExpanded ? 'Show less' : 'Show more';
+      toggle.setAttribute('aria-expanded', String(recentExpanded));
+      const rows = document.getElementById('recentRows'); rows.replaceChildren();
+      (recentExpanded ? items : items.slice(0,3)).forEach(item => {
+        const row = document.createElement('tr'), page = document.createElement('td'), time = document.createElement('td');
+        const a = document.createElement('a'); a.href = item.url; a.target = '_blank'; a.rel = 'noopener'; a.className = 'recent-link';
+        a.onclick = e => { if(e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) { recordRecent(item.url,item.title); return; } e.preventDefault(); openRecentLink(item.url,item.title); };
+        const letter = document.createElement('span'); letter.className = 'recent-letter'; letter.setAttribute('aria-hidden','true'); letter.textContent = (item.title || domainFromUrl(item.url)).slice(0,1).toUpperCase(); a.append(letter);
+        // Reuse an existing icon only, without starting extra discovery requests.
+        const tile = getLinks().find(x => recentUrl(x.url) === item.url);
+        const source = (tile && tile.icon) || getIconCache()[domainFromUrl(item.url)];
+        if(typeof source === 'string') { const img = document.createElement('img'); img.alt = ''; img.referrerPolicy = 'no-referrer'; img.onload = () => { letter.replaceWith(img); }; img.src = source; }
+        const text = document.createElement('span'); const title = document.createElement('span'); title.textContent = item.title || domainFromUrl(item.url);
+        const domain = document.createElement('span'); domain.className = 'recent-domain'; domain.textContent = domainFromUrl(item.url); text.append(title,domain); a.append(text);
+        const stamp = document.createElement('time'); stamp.dateTime = new Date(item.viewedAt).toISOString(); stamp.textContent = new Date(item.viewedAt).toLocaleString(); time.append(stamp);
+        page.append(a); row.append(page,time); rows.append(row);
+      });
+    }
+    document.getElementById('recentToggle').onclick = () => { recentExpanded = !recentExpanded; renderRecent(); };
+    document.getElementById('recentClear').onclick = () => {
+      const state = getRecent();
+      const clearedAt = Math.max(Date.now(), state.clearedAt, ...state.items.map(x => x.viewedAt));
+      if(saveRecent({clearedAt,items:[]})) { recentExpanded = false; renderRecent(); document.getElementById('exportBtn').focus(); }
+    };
+    window.addEventListener('storage', e => { if(e.key === RECENT_KEY || e.key === null) renderRecent(); });
 
     function getLinks(){ try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch { return []; } }
     function setLinks(arr){ localStorage.setItem(LS_KEY, JSON.stringify(arr)); }
@@ -592,6 +686,7 @@
       applyProviderOrder(st);
 
       wirePointerDnD();
+      renderRecent();
     }
 
     function renderGroupBar(links, active){
@@ -640,7 +735,7 @@
       const mRefresh = document.createElement('button'); mRefresh.textContent = 'Refresh icon';
       [mOpen, mEdit, mRemove, mRefresh].forEach(b => menu.appendChild(b));
 
-      mOpen.onclick = () => window.open(item.url, '_blank');
+      mOpen.onclick = () => openRecentLink(item.url, item.title);
       mEdit.onclick = () => openLinkDialog('edit', item, Number(el.dataset.gindex));
       mRemove.onclick = () => { if (confirm('Remove this shortcut?')) removeAt(Number(el.dataset.gindex)); };
       mRefresh.onclick = () => { const cache=getIconCache(); delete cache[domainFromUrl(item.url)]; setIconCache(cache); fav.innerHTML=''; const im=document.createElement('img'); im.referrerPolicy='no-referrer'; fav.appendChild(im); resolveIcon(item.url, im, useMonogram); };
@@ -946,7 +1041,7 @@
 
     document.getElementById('addBtn').onclick = () => openLinkDialog('add');
 
-    function launchAICompanion(q){ if(!q) return; window.open(`https://www.perplexity.ai/search?q=${encodeURIComponent(q)}`,'_blank'); }
+    function launchAICompanion(q){ if(!q) return; openRecentLink(`https://www.perplexity.ai/search?q=${encodeURIComponent(q)}`, 'Perplexity: ' + q); }
     function enableMic(button, input){
       if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){ button.dataset.tip='Voice not supported in this browser'; button.setAttribute('aria-label','Voice not supported in this browser'); button.disabled=false; button.onclick=()=>alert('Voice input is not supported in this browser.'); return; }
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -964,6 +1059,7 @@
     enableImage(qs('#bImg'), 'bing');
     ['g','b'].forEach(prefix => { const btn = qs(`#${prefix}AI`); const form = prefix==='g'?qs('#googleForm'):qs('#bingForm'); const input = form.querySelector('input[name=q]'); btn.onclick = () => launchAICompanion(input.value); });
 
+    document.getElementById('pxOpen').addEventListener('click', e => recordRecent(e.currentTarget.href, 'Perplexity'));
     const providerForms = Array.from(providerGrid.querySelectorAll('.search'));
     const providerStatus = qs('#providerStatus');
     function showProviderStatus(message, isError){
@@ -978,7 +1074,7 @@
       enableMic(form.querySelector('.mic'), input);
       // The browser submits the form to a new tab and encodes the query itself. An empty box opens nothing.
       form.onsubmit = (e) => {
-        if (input.value.trim()){ providerStatus.hidden = true; return; }
+        if (input.value.trim()){ providerStatus.hidden = true; const destination = new URL(form.action); destination.search = new URLSearchParams(new FormData(form)).toString(); recordRecent(destination.href, name + ': ' + input.value); return; }
         e.preventDefault();
         showProviderStatus(hasOpenLink ? `Type a question for ${name} first, or use Open ${name}.` : `Type a search for ${name} first.`, true);
         input.focus();
@@ -1231,7 +1327,7 @@
         // Treat as a tap if minimal movement
         endDrag();
         if (moved <= TAP_THRESHOLD){
-          window.open(card.dataset.url, '_blank');
+          openRecentLink(card.dataset.url, getLinks()[Number(card.dataset.gindex)]?.title);
         }
         return;
       }

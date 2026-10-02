@@ -1,6 +1,6 @@
 # Visual baseline: Ramrattan Rentals
 
-Status: Implemented and accepted.  Owner visual acceptance was recorded at `327ff8c`, alignment at `814a2cd`, and the final four-provider layout at `9d172f1`.  Included in the v1.5.1 release baseline.  Updated 2026-10-01.
+Status: Implemented and accepted.  Owner visual acceptance was recorded at `327ff8c`, alignment at `814a2cd`, and the final four-provider layout at `9d172f1`.  Included in the v1.5.1 release baseline.  The recent-links card in v1.5.2 follows these surfaces, colours and typography.  Updated 2026-10-02.
 
 ## Reference
 
