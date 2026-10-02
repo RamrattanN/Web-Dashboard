@@ -1,0 +1,125 @@
+{
+  "links": [
+    {
+      "url": "https://example.com/0",
+      "title": "Tile 0",
+      "group": "Work",
+      "desc": "Description 0",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+    },
+    {
+      "url": "https://example.com/1",
+      "title": "Tile 1",
+      "group": "Other",
+      "desc": "Description 1",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+    },
+    {
+      "url": "https://example.com/2",
+      "title": "Tile 2",
+      "group": "Work",
+      "desc": "Description 2",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+    },
+    {
+      "url": "https://example.com/3",
+      "title": "Tile 3",
+      "group": "Other",
+      "desc": "Description 3",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+    },
+    {
+      "url": "https://example.com/4",
+      "title": "Tile 4",
+      "group": "Work",
+      "desc": "Description 4",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+    },
+    {
+      "url": "https://example.com/5",
+      "title": "Tile 5",
+      "group": "Other",
+      "desc": "Description 5",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+    },
+    {
+      "url": "https://example.com/6",
+      "title": "Tile 6",
+      "group": "Work",
+      "desc": "Description 6",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+    },
+    {
+      "url": "https://example.com/7",
+      "title": "Tile 7",
+      "group": "Other",
+      "desc": "Description 7",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+    },
+    {
+      "url": "https://example.com/8",
+      "title": "Tile 8",
+      "group": "Work",
+      "desc": "Description 8",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+    },
+    {
+      "url": "https://example.com/9",
+      "title": "Tile 9",
+      "group": "Other",
+      "desc": "Description 9",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+    },
+    {
+      "url": "https://example.com/10",
+      "title": "Tile 10",
+      "group": "Work",
+      "desc": "Description 10",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+    },
+    {
+      "url": "https://example.com/11",
+      "title": "Tile 11",
+      "group": "Other",
+      "desc": "Description 11",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+    },
+    {
+      "url": "https://example.com/12",
+      "title": "Tile 12",
+      "group": "Work",
+      "desc": "Description 12",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+    },
+    {
+      "url": "https://example.com/13",
+      "title": "Tile 13",
+      "group": "Other",
+      "desc": "Description 13",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+    },
+    {
+      "url": "https://example.com/14",
+      "title": "Tile 14",
+      "group": "Work",
+      "desc": "Description 14",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+    },
+    {
+      "url": "https://example.com/15",
+      "title": "Tile 15",
+      "group": "Other",
+      "desc": "Description 15",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+    }
+  ],
+  "settings": {
+    "mode": "local",
+    "value": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
+    "color": "#123456",
+    "colsMax": 3,
+    "maxTiles": 6,
+    "groupFilter": "All",
+    "lockLayout": "no"
+  }
+}
