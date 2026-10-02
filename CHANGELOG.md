@@ -1,9 +1,9 @@
 # CHANGELOG
 
-## Unreleased - v1.5.2-dev
+## v1.5.2 - 2026-10-02
 
 - Add a standalone Continue with these tabs card with ten unique recent dashboard links, expansion, scrolling and timestamp-based Clear.
-- The standalone card was accepted by the owner on 2026-10-02 at `9888d53` (Chrome on macOS, `file://`); the record is in BASELINE.md.  Chrome-history integration remains deferred and is not part of that acceptance.
+- The standalone card was accepted by the owner on 2026-10-02 at `9888d53` (Chrome 154.0.8037.59 Official Build, x86_64, on macOS, `file://`); the record is in BASELINE.md.  Chrome-history integration remains deferred and is not part of that acceptance.
 - Keep activity out of backups and preserve clearing across imports and reloads.  Chrome history integration remains deferred.
 
 

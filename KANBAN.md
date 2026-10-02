@@ -1,6 +1,11 @@
 # Kanban
 
-Current baseline: v1.5.1.  Final four-provider dashboard accepted by the owner at `9d172f1` on 2026-10-01; PR #3 merged at `5ab4c00`; [GitHub Release v1.5.1](https://github.com/RamrattanN/Web-Dashboard/releases/tag/v1.5.1) published on 2026-10-02 at `901807f`.  Historical accepted commits are recorded in BASELINE.md.
+Current baseline: v1.5.2.  The standalone recent-links card was accepted by the owner at `9888d53` on 2026-10-02 in Chrome 154.0.8037.59 (Official Build), x86_64, macOS, `file://`.  The owner approved review, merge and publication.  Historical baseline and release records are in BASELINE.md and CHANGELOG.md.
+
+## Delivered in v1.5.2
+
+- Continue with these tabs: three rows initially, Show more / Show less, up to ten unique recent links, internal scrolling, and persistent timestamp-based Clear.
+- Dashboard activity only; local recent data and its clearing cutoff stay outside backups.  Chrome-wide history integration remains Backlog.
 
 ## Delivered in v1.5.1
 
@@ -40,52 +45,11 @@ Current baseline: v1.5.1.  Final four-provider dashboard accepted by the owner a
   - Preserve existing setting behaviour, defaults, persistence, and import/export compatibility.
   - Keep headings, labels, keyboard navigation, and scrolling usable on narrow screens.
 
-### Recent activity: expandable table and Chrome integration
+### Chrome-history integration for recent activity
 
-- Status: Standalone recent-links card implemented on `feature/continue-with-tabs` and accepted by the owner on 2026-10-02 at `9888d53` (Chrome 154.0.8037.59 on macOS, Dashboard Test profile, `file://`; four checks reported passed; see BASELINE.md).  Browser CI passed at `9888d53` (77 passed, 1 skipped in both runs).  Draft PR #6 is not merged or released.
-- Status of Chrome integration: Backlog.  The Chrome history extension is a separate item, not implemented and not covered by the standalone acceptance.
-- Agreed: 2026-10-01.
-- User need: Help users resume relevant browsing activity, including on first use.  Chrome browsing activity is more useful for this purpose than dashboard-only activity, which initially has no entries.
-
-#### Shared presentation and behaviour
-
-- Place a recent-items section below the dashboard tiles.
-- Provide Show more / Show less to expand or collapse the section without changing saved tile layout.
-- Display up to 10 unique URLs, newest activity first, in a table inside a card with a fixed maximum height and internal scrolling.
-- Show site icon, title, domain, and last-viewed time.  Clicking a row opens its link in a new tab.
-- Reopening a URL updates its activity timestamp and moves it to the top.
-- Hide the entire section when there are no qualifying entries, with no empty card or reserved whitespace.
-- Provide Clear recent items on the same screen within the card.
-
-#### Timestamp-based clearing
-
-- Clearing records a persistent clearedAt timestamp and immediately hides the card.
-- Include only activity with a viewedAt timestamp strictly later than clearedAt.
-- Reopening an older URL after clearing qualifies as new activity.
-- The next qualifying activity makes the section reappear.
-- Reloading preserves the clearing cutoff.
-- Clearing affects the dashboard's recent-activity display only.  It does not delete saved tiles or Chrome browsing history.
-- Pending activity reads must respect the latest cutoff so an older response cannot repopulate a cleared card.
-
-#### Delivery modes
-
-- Standalone dashboard: retain the single-file, no-build setup and record links opened through the dashboard.  Hide the recent-items section until activity exists.
-- Chrome-integrated dashboard: plan an extension-based mode using permitted Chrome history access after the user grants permission.  Use existing recent history to populate the card on first use when available.
-- Keep the standalone version available alongside Chrome integration.
-- If history is empty, access is declined or revoked, or integration is unavailable, do not display blank placeholders or fabricate activity.  Use the standalone fallback where applicable.
-- Do not promise synced cross-device tabs or history as part of this scope; the screenshot is a presentation reference.  Verify actual history API coverage during extension design.
-
-#### Acceptance and implementation planning
-
-- Verify first use with existing Chrome history, first use without history, and permission denial or revocation.
-- Verify ordering, deduplication, the 10-item limit, internal scrolling, and keyboard access.
-- Verify clearing, reload persistence, repeated clearing, and reopening a previously cleared URL.
-- Verify new qualifying activity reappears after clearing, including while the dashboard stays open in integrated mode.
-- Define refresh timing and extension packaging during implementation planning.
-- Keep recent activity local.  Decide backup treatment explicitly so importing an older dashboard backup cannot unintentionally undo a clearing cutoff.
-- Preserve existing tiles, settings, import/export, and drag behaviour.
-- Standalone implementation uses three collapsed rows, up to ten expanded rows, cached icons with letter fallbacks, and excludes activity from backups.  Records opening actions, not confirmed page views.  Chrome integration is deferred.
-
+- Status: Backlog.  Standalone card delivered in v1.5.2; extension integration is not implemented or accepted.
+- Add permission-based Chrome history access for useful first-use activity, retaining the standalone fallback.
+- Verify permission denial/revocation, refresh timing, packaging, cutoff handling and local privacy.  Full agreed design is preserved under Delivery history below.
 
 ### Functional follow-ups from the PR #3 review
 
@@ -150,3 +114,49 @@ Entries marked Backlog record future work only: export destination selection, Ch
 - Status: Implemented and accepted by the owner at `9d172f1` on 2026-10-01 (overall confirmation: "All looks good").  Included in v1.5.1.
 - Requested: 2026-10-01.  Supersedes the six-provider section above.
 - Delivered: Google, Bing, DuckDuckGo (restored as ordinary web search) and Perplexity; all open the encoded query in a new tab; empty input shows a message; Duck.ai, ChatGPT and Claude boxes and the Copy & open workflow removed; reordering, persistence and backups kept; saved six-box orders migrated; visibility setting relabelled "Show DuckDuckGo and Perplexity" with its key unchanged.  Details and evidence are in BASELINE.md.
+
+### Recent activity: standalone delivery and extension plan
+
+- Status: Standalone delivered and owner-accepted in v1.5.2.  Chrome-history extension remains Backlog.
+- Status of Chrome integration: Backlog.  The Chrome history extension is a separate item, not implemented and not covered by the standalone acceptance.
+- Agreed: 2026-10-01.
+- User need: Help users resume relevant browsing activity, including on first use.  Chrome browsing activity is more useful for this purpose than dashboard-only activity, which initially has no entries.
+
+#### Shared presentation and behaviour
+
+- Place a recent-items section below the dashboard tiles.
+- Provide Show more / Show less to expand or collapse the section without changing saved tile layout.
+- Display up to 10 unique URLs, newest activity first, in a table inside a card with a fixed maximum height and internal scrolling.
+- Show site icon, title, domain, and last-viewed time.  Clicking a row opens its link in a new tab.
+- Reopening a URL updates its activity timestamp and moves it to the top.
+- Hide the entire section when there are no qualifying entries, with no empty card or reserved whitespace.
+- Provide Clear recent items on the same screen within the card.
+
+#### Timestamp-based clearing
+
+- Clearing records a persistent clearedAt timestamp and immediately hides the card.
+- Include only activity with a viewedAt timestamp strictly later than clearedAt.
+- Reopening an older URL after clearing qualifies as new activity.
+- The next qualifying activity makes the section reappear.
+- Reloading preserves the clearing cutoff.
+- Clearing affects the dashboard's recent-activity display only.  It does not delete saved tiles or Chrome browsing history.
+- Pending activity reads must respect the latest cutoff so an older response cannot repopulate a cleared card.
+
+#### Delivery modes
+
+- Standalone dashboard: retain the single-file, no-build setup and record links opened through the dashboard.  Hide the recent-items section until activity exists.
+- Chrome-integrated dashboard: plan an extension-based mode using permitted Chrome history access after the user grants permission.  Use existing recent history to populate the card on first use when available.
+- Keep the standalone version available alongside Chrome integration.
+- If history is empty, access is declined or revoked, or integration is unavailable, do not display blank placeholders or fabricate activity.  Use the standalone fallback where applicable.
+- Do not promise synced cross-device tabs or history as part of this scope; the screenshot is a presentation reference.  Verify actual history API coverage during extension design.
+
+#### Acceptance and implementation planning
+
+- Verify first use with existing Chrome history, first use without history, and permission denial or revocation.
+- Verify ordering, deduplication, the 10-item limit, internal scrolling, and keyboard access.
+- Verify clearing, reload persistence, repeated clearing, and reopening a previously cleared URL.
+- Verify new qualifying activity reappears after clearing, including while the dashboard stays open in integrated mode.
+- Define refresh timing and extension packaging during implementation planning.
+- Keep recent activity local.  Decide backup treatment explicitly so importing an older dashboard backup cannot unintentionally undo a clearing cutoff.
+- Preserve existing tiles, settings, import/export, and drag behaviour.
+- Standalone implementation uses three collapsed rows, up to ten expanded rows, cached icons with letter fallbacks, and excludes activity from backups.  Records opening actions, not confirmed page views.  Chrome integration is deferred.

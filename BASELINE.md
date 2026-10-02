@@ -453,7 +453,7 @@ PR #3 was squash-merged into `main` at `5ab4c00f590bdc992358145684495cfa8dd87bc5
 
 ## Continue with these tabs - standalone card accepted by the owner at `9888d53`
 
-The standalone card is on `feature/continue-with-tabs`, version `v1.5.2-dev`, in draft PR #6.  It is not merged or released.  Owner acceptance of the standalone card is recorded below.  Browser CI passed at `74192f8` in push run 36970349196 and pull-request run 36970355696: 77 passed, 1 skipped, 0 failed each.  The separate live Bing diagnostic verified fallback after provider failure.  Desktop and phone CI screenshots were inspected; they use synthetic activity and blocked remote icons.  No browser was launched locally: the Chromium download returned a truncated archive.  It records dashboard shortcut openings and search submissions, not browser history or confirmed destination loads.  Recent data and the clearing cutoff stay outside backups.  The published v1.5.1 baseline and its acceptance records remain unchanged.
+The standalone card was delivered through PR #6.  Release preparation sets the visible version to `v1.5.2`; accepted application behaviour is unchanged.  Owner acceptance of the standalone card is recorded below.  Browser CI passed at `74192f8` in push run 36970349196 and pull-request run 36970355696: 77 passed, 1 skipped, 0 failed each.  The separate live Bing diagnostic verified fallback after provider failure.  Desktop and phone CI screenshots were inspected; they use synthetic activity and blocked remote icons.  No browser was launched locally: the Chromium download returned a truncated archive.  It records dashboard shortcut openings and search submissions, not browser history or confirmed destination loads.  Recent data and the clearing cutoff stay outside backups.  The published v1.5.1 baseline and its acceptance records remain unchanged.
 
 ### Owner acceptance of the standalone card - 2026-10-02, at `9888d53`
 
@@ -475,3 +475,8 @@ Scope of this acceptance:
 - Recent activity and the clearing cutoff remain excluded from backups.
 - The Chrome-history extension is a separate, deferred item.  It is not implemented and is not covered by this acceptance.
 - Safari, Windows and touch devices remain unverified.  The published v1.5.1 baseline and its acceptance records are unchanged.
+
+
+## Release preparation - v1.5.2
+
+On 2026-10-02 the owner approved final review, merge, tagging and publication after providing the Chrome version above.  This preparation changes the version label and reconciles current documentation, preserving earlier acceptance records.  CI at the owner-acceptance documentation head `105f396` passed in both runs (37039650978 and 37039644372), 77 passed and 1 skipped each.  Publication uses a new v1.5.2 tag at verified main; v1.5.1 and earlier tags are preserved.  The GitHub release records the exact published commit and main CI evidence.
