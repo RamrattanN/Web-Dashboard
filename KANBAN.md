@@ -95,9 +95,9 @@
 - Bing daily wallpaper: disabled in Settings until a real Bing image is shown to load in a browser.  Bing blocks the request by CORS; re-enabling needs a verified approach and a separate decision on any proxy or backend.
 - Group filter with no matching group (review finding F5): after an import, or after removing or editing the last tile in the active group, the grid is empty.  The All button added on 2026-10-01 now clears such a filter in one click.  Still in Backlog: falling back to All automatically.
 - Import of hand-edited backups (review finding F6): numeric settings written as strings, such as `"maxTiles": "3"`, are rejected.  Backups written by the dashboard are unaffected.  Any change must keep validation strict rather than loosen it.
-- Duck.ai search panel: delivered on 2026-10-01 as a copy-and-open flow (the prompt is copied and Duck.ai opened for pasting) and accepted by the owner at `327ff8c`.  Still in Backlog: passing the prompt to Duck.ai directly, only once an approach is verified in a browser.  DuckDuckGo's `!ai` route failed this on 2026-10-01 in Chrome on macOS (`https://duckduckgo.com/?q=%21ai+dashboard+prompt+test+12345` opened ordinary search results) and must not be used; DuckDuckGo search parameters also do not carry over (`duckduckgo.com/chat?q=…` redirects to `duck.ai/chat` without the text).
+- Duck.ai search panel: delivered on 2026-10-01 as a copy-and-open flow and accepted by the owner at `327ff8c`; later removed at the owner's direction when DuckDuckGo web search was restored (see "Search section: four providers").  Direct prompt transfer to Duck.ai is no longer planned.  For the record: DuckDuckGo's `!ai` route failed this on 2026-10-01 in Chrome on macOS (`https://duckduckgo.com/?q=%21ai+dashboard+prompt+test+12345` opened ordinary search results) and must not be used; DuckDuckGo search parameters also do not carry over (`duckduckgo.com/chat?q=…` redirects to `duck.ai/chat` without the text).
 
-Entries marked Backlog record future work only: export destination selection, recent activity, the remaining functional follow-ups (including the F5 fallback and F6), Bing daily and direct Duck.ai prompt transfer are not implemented.
+Entries marked Backlog record future work only: export destination selection, recent activity, the remaining functional follow-ups (including the F5 fallback and F6) and Bing daily are not implemented.
 
 ### Group bar: explicit All button
 
@@ -120,7 +120,13 @@ Entries marked Backlog record future work only: export destination selection, re
 
 ### Search section: six providers, spacing and reordering
 
-- Status: Implemented on the recovery branch on 2026-10-01; **owner acceptance pending**.
+- Status: Superseded on 2026-10-01 by "Search section: four providers" below, before owner acceptance.  Kept as a record.
 - Requested: 2026-10-01.
-- Delivered: more space under the header; ChatGPT and Claude boxes added; Google and Bing open in a new tab; Copy & open for Duck.ai, ChatGPT and Claude; an Open link for every AI provider; drag, menu and arrow-key reordering saved as `providerOrder`.  Details and evidence are in BASELINE.md.
-- Still in Backlog: sending a prompt directly to Duck.ai, ChatGPT or Claude, only once a documented route is verified in a browser.
+- Delivered at the time: more space under the header; ChatGPT and Claude boxes added; Google and Bing open in a new tab; Copy & open for Duck.ai, ChatGPT and Claude; an Open link for every AI provider; drag, menu and arrow-key reordering saved as `providerOrder`.  Details and evidence are in BASELINE.md.
+- No longer planned in the search section: Duck.ai, ChatGPT and Claude boxes were removed by the owner's later instruction.
+
+### Search section: four providers
+
+- Status: Implemented on the recovery branch on 2026-10-01; **owner acceptance pending**.
+- Requested: 2026-10-01.  Supersedes the six-provider section above.
+- Delivered: Google, Bing, DuckDuckGo (restored as ordinary web search) and Perplexity; all open the encoded query in a new tab; empty input shows a message; Duck.ai, ChatGPT and Claude boxes and the Copy & open workflow removed; reordering, persistence and backups kept; saved six-box orders migrated; visibility setting relabelled "Show DuckDuckGo and Perplexity" with its key unchanged.  Details and evidence are in BASELINE.md.

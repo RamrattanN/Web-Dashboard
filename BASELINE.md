@@ -362,7 +362,12 @@ on narrow screens. No control or behaviour changed.
 | Desktop and phone screenshots of the Wallpaper group | Agent inspection of the CI screenshots | Linux Chromium rendering, not the owner's Mac |
 | The alignment adjustment looks correct | Owner, Chrome on macOS, Dashboard Test profile, at `814a2cd`, 2026-10-01 | A visual confirmation of the adjustment as a whole. The owner did not report results for individual checklist steps |
 
-## Search section: six providers, new tabs and reordering — implemented, owner acceptance pending
+## Search section: six providers, new tabs and reordering — superseded, never accepted
+
+This section is kept as a historical record. The six-provider design at
+`a9c8bb9` was replaced by the four-provider design described in the next
+section before the owner accepted it. Its findings on prompt transfer remain
+valid as findings; its behaviour, tests and "pending" row no longer apply.
 
 Added after every acceptance above; none of them covers it. The Duck.ai row
 accepted at `327ff8c` keeps its behaviour and wording, with the provider name
@@ -396,3 +401,41 @@ hides the four AI providers.
 | Six boxes, 80–120px of room at desktop and tablet sizes and 16–40px on a phone, two columns then one, no horizontal overflow, focus indicator on all 47 keyboard stops, grip tooltip, move menu not covered | CI layout assertions | |
 | Appearance of the new layout, grip tooltip and move menu | Agent inspection of the CI screenshots | Linux Chromium, not the owner's Mac |
 | Real providers and the owner's browser: new tabs, encoding as seen by the sites, pasting into ChatGPT and Claude, dragging with a real pointer | **Pending owner acceptance** | |
+
+## Search section: four providers — implemented, owner acceptance pending
+
+This supersedes the six-provider section above. It also supersedes the
+Duck.ai row accepted at `327ff8c`: that row and its Copy & open workflow no
+longer exist, at the owner's direction. The acceptance record for it stays
+above as history.
+
+Providers: Google, Bing, DuckDuckGo and Perplexity. DuckDuckGo is an ordinary
+web search form to `https://duckduckgo.com/` with the query in `q`; it has no
+companion button, clipboard workflow or Duck.ai routing. Removed from the
+search section: the Duck.ai, ChatGPT and Claude boxes, the Copy & open
+buttons, the clipboard code and its messages. Not removed: shortcut tiles
+(including ChatGPT) and the ChatGPT tile-icon handling.
+
+Kept from the six-provider build: all boxes open in a new tab with the
+browser encoding the query; an empty box opens nothing and shows a message;
+the space under the header; grip, menu and arrow-key reordering; the order
+stored as `settings.providerOrder`. Layout is two columns, one under 760px.
+
+Order migration: when an order is read, `duck` is treated as `duckduckgo`,
+ids that are not supported (including `chatgpt` and `claude`) are dropped,
+duplicates are removed, and any supported provider not listed follows in
+default order. A stored old order is not rewritten until the next reorder,
+which stores only supported ids. The same applies to imported backups.
+
+`showExtraSearch` keeps its key and meaning: it hides the secondary
+providers, which are DuckDuckGo and Perplexity. Its label is now "Show
+DuckDuckGo and Perplexity".
+
+| Evidence | Source | What it does and does not show |
+| --- | --- | --- |
+| Google, Bing, DuckDuckGo and Perplexity each open a new tab whose `q` decodes to exactly what was typed, for spaces, accented and CJK text, emoji and punctuation; nothing else is sent; the dashboard URL and input are unchanged; empty and blank input open nothing and show the message | CI (Linux Chromium) with the destination sites intercepted | What the dashboard sends. Not how the real sites respond |
+| Exactly four boxes; no Duck.ai, ChatGPT or Claude box, control or copy code; DuckDuckGo has only the grip, voice input and move menu; default tiles including ChatGPT unchanged; visibility setting label, key and effect | CI | |
+| Reorder by grip, menu and arrow keys; typed text kept; cancelled drag; grip still clickable after a drag; reload persistence; tile order untouched | CI with real mouse and keyboard input | |
+| Order migration for stored settings (seven cases) and for a six-box backup with a ChatGPT tile; export and import; backups without an order; unknown ids; malformed values rejected | CI | |
+| Four boxes in two columns then one, space under the header, no horizontal overflow, focus indicator on all 35 keyboard stops, empty-search message | CI layout assertions and agent inspection of the CI screenshots | Linux Chromium, not the owner's Mac |
+| Real providers and the owner's browser | **Pending owner acceptance** | |

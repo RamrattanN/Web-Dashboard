@@ -21,24 +21,16 @@ highlighted when no filter is set and shows every link up to the tile limit.
 Choosing a group shows only that group; clicking the selected group again, or
 clicking All, clears the filter.  The choice is remembered across reloads.
 
-There are six separate search boxes: Google, Bing, Duck.ai, Perplexity,
-ChatGPT and Claude.  Nothing is sent until you press Enter or a box's button.
+There are four separate search boxes: Google, Bing, DuckDuckGo and
+Perplexity.  Nothing is sent until you press Enter in a box.
 
-- **Google, Bing and Perplexity** open the result in a new tab with the query
-  encoded by the browser.  The dashboard tab and the typed text stay as they
-  are.  An empty box opens nothing and says so.
-- **Duck.ai, ChatGPT and Claude** use **Copy & open**: the prompt is copied to
-  the clipboard, the provider opens in a new tab, and you paste it there.
-  None of the three has an officially documented web address for receiving a
-  prompt that has also been verified here: DuckDuckGo documents none and its
-  `!ai` route failed the owner's test; OpenAI documents its browser extension
-  rather than an address; Anthropic documents a `claude://` link for the
-  Claude Desktop app only.  The typed prompt stays in the box.  If the
-  browser refuses the copy, nothing is opened and a message says so; if the
-  new tab is blocked, the message points to the box's **Open** link.  A
-  provider may show a welcome or sign-in screen before it accepts a paste.
-- Each AI box, including Perplexity, has an ordinary **Open** link that opens
-  the provider without a prompt.
+- Each box opens its result in a new tab with the query encoded by the
+  browser.  The dashboard tab and the typed text stay as they are.
+  DuckDuckGo is an ordinary web search at `https://duckduckgo.com/?q=…`.
+- An empty box opens nothing and shows a message.
+- Perplexity also has an ordinary **Open** link that opens it without a
+  question.  The companion button on the Google and Bing boxes hands the
+  typed query to Perplexity, as before.
 
 **Reordering.**  Drag a box by the grip at its left edge, or focus the grip
 and press Enter for **Move earlier** and **Move later** (the arrow keys also
@@ -47,11 +39,16 @@ reload, and is included in backups as `providerOrder`; backups and settings
 without it use the default order.  It is separate from the order of the
 shortcut tiles.
 
-The Settings option **Show AI providers** (stored as `showExtraSearch`, as
-before) shows or hides Duck.ai, Perplexity, ChatGPT and Claude together.  It
-used to hide the second row, which held Duck.ai and Perplexity; it has the
-same effect on those two and now also covers the two new AI boxes.  Google
-and Bing are always shown.
+The Settings option **Show DuckDuckGo and Perplexity** (stored as
+`showExtraSearch`, as before) shows or hides those two boxes.  Google and
+Bing are always shown.
+
+An earlier unreleased build of this branch had six boxes, adding Duck.ai,
+ChatGPT and Claude with a copy-and-paste workflow.  Those three were removed
+from the search section.  An order saved by that build is read safely: the
+Duck.ai position becomes DuckDuckGo, ChatGPT and Claude entries are dropped,
+and the rest keep their relative order.  Shortcut tiles, including a ChatGPT
+tile, are not affected.
 
 ## Wallpaper and data
 

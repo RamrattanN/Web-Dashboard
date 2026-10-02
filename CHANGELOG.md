@@ -108,7 +108,23 @@
 - The "Show secondary search row" setting is renamed "Show AI providers" and
   hides Duck.ai, Perplexity, ChatGPT and Claude together. Its stored key and
   its effect on Duck.ai and Perplexity are unchanged.
-- The search-section changes above await owner acceptance.
+- The six-provider search section described in the three entries above was
+  superseded before any acceptance by the four-provider section below.
+- Search section simplified to four providers: Google, Bing, DuckDuckGo and
+  Perplexity. DuckDuckGo is restored as an ordinary web search
+  (`https://duckduckgo.com/?q=…`) with no companion, clipboard or Duck.ai
+  routing. The Duck.ai, ChatGPT and Claude boxes, their Copy & open
+  workflow and its code are removed. All four boxes open the encoded query
+  in a new tab and keep the dashboard and its input; an empty box opens
+  nothing and shows a message. Grip, menu and arrow-key reordering, reload
+  persistence and backup support are kept.
+- Saved `providerOrder` values and backups from the six-box build are read
+  safely: `duck` becomes `duckduckgo`, `chatgpt` and `claude` are dropped,
+  the remaining order is kept and each provider appears once.
+- The visibility setting now reads "Show DuckDuckGo and Perplexity"; its
+  stored key (`showExtraSearch`) and effect on the secondary providers are
+  unchanged. Shortcut tiles, including ChatGPT, are untouched.
+- The four-provider search section awaits owner acceptance.
 - Owner visual acceptance of the refresh, the All button and the Duck.ai row
   was given on 2026-10-01 at `327ff8c` (Chrome on macOS). The ChatGPT icon
   fix was accepted by the owner at `0c22c32`.

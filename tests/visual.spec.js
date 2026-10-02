@@ -72,8 +72,8 @@ for (const [size, viewport] of Object.entries(viewports)) for (const state of Ob
     await shot(page, `${size}-${state}`, {fullPage: true});
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
-    // Six provider boxes, with breathing room under the header that shrinks on a phone.
-    await expect(page.locator('#providerGrid .search:visible')).toHaveCount(6);
+    // Four provider boxes, with breathing room under the header that shrinks on a phone.
+    await expect(page.locator('#providerGrid .search:visible')).toHaveCount(4);
     const room = await page.evaluate(() => document.querySelector('#providerGrid .search').getBoundingClientRect().top - document.querySelector('.app-header').getBoundingClientRect().bottom);
     if (size === 'phone') { expect(room).toBeGreaterThanOrEqual(16); expect(room).toBeLessThanOrEqual(40); } else { expect(room).toBeGreaterThanOrEqual(80); expect(room).toBeLessThanOrEqual(120); }
     const columns = await page.locator('#providerGrid .search').evaluateAll(forms => new Set(forms.map(form => Math.round(form.getBoundingClientRect().left))).size);
@@ -117,7 +117,7 @@ test('visual review: text contrast meets 4.5:1 on pale, dark and image wallpaper
       const lum = ([r, g, b]) => [r, g, b].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
       const surface = el => { for (let n = el; n; n = n.parentElement) { const b = parse(getComputedStyle(n).backgroundColor); if (b.length < 4 || b[3] === 1) return b; if (b[3] > 0) return null; } return null; };
       const ratio = (fg, bg) => { const [a, b] = [lum(fg), lum(bg)].sort((x, y) => y - x); return (a + 0.05) / (b + 0.05); };
-      const checks = {'.tip': null, '.card .title': null, '.card .desc': null, '.pill:not(.active)': null, '.pill.active': null, '.search .engine': null, '.search input': '::placeholder', '.header-action.with-label span': null, '.action-btn span': null, '#providerStatus': null, '#wallpaperStatus span': null, '#wallpaperRetry': null, '#picsumHint': null};
+      const checks = {'.tip': null, '.card .title': null, '.card .desc': null, '.pill:not(.active)': null, '.pill.active': null, '.search .engine': null, '.search input': '::placeholder', '.header-action.with-label span': null, '#providerStatus': null, '#wallpaperStatus span': null, '#wallpaperRetry': null, '#picsumHint': null};
       return [...Object.entries(checks), ['#providerStatus', 'error']].map(([selector, pseudo]) => {
         const el = document.querySelector(selector); if (!el) return {selector, missing: true};
         if (pseudo === 'error') { el.classList.add('error'); pseudo = null; selector += '.error'; }
@@ -159,22 +159,17 @@ test('visual review: controls have names, no emoji, and a visible keyboard focus
     if (focus.what === 'pill' && !seen.slice(0, -1).includes('pill')) await shot(page, 'desktop-focus-group-filter');
     if (focus.what === 'icon-btn' && !seen.slice(0, -1).includes('icon-btn')) await shot(page, 'desktop-focus-tile-more');
   }
-  for (const expected of ['logo', 'settingsBtn', 'drag-handle', 'gMic', 'duckPrompt', 'duckCopyOpen', 'duckOpen', 'pxOpen', 'chatgptCopyOpen', 'claudeOpen', 'pill', 'icon-btn']) expect(seen.join(' ')).toContain(expected);
-  expect(seen.length).toBe(34 + 4 + links.length); // title, 4 header buttons and 29 provider controls; All plus three group filters; one menu button per tile
-  // Duck.ai copy flow messages, with the clipboard and new tab replaced.
-  await page.evaluate(() => { window.open = () => ({}); Object.defineProperty(navigator, 'clipboard', {configurable: true, value: {writeText: async () => {}}}); });
-  await page.locator('#duckPrompt').fill('Plan my week'); await page.locator('#duckPrompt').press('Enter');
-  await expect(page.locator('#providerStatus')).toBeVisible();
-  await page.locator('#duckCopyOpen').hover();
-  await shot(page, 'desktop-duck-copied');
-  await page.evaluate(() => { navigator.clipboard.writeText = async () => { throw new Error('denied'); }; document.execCommand = () => false; });
-  await page.locator('#duckPrompt').press('Enter');
+  for (const expected of ['logo', 'settingsBtn', 'drag-handle', 'gMic', 'bAI', 'dMic', 'pMic', 'pxOpen', 'pill', 'icon-btn']) expect(seen.join(' ')).toContain(expected);
+  expect(seen.length).toBe(22 + 4 + links.length); // title, 4 header buttons and 17 provider controls; All plus three group filters; one menu button per tile
+  // Empty-search message at desktop and phone widths.
+  await page.locator('#ddgForm input[name=q]').focus(); await page.keyboard.press('Enter');
+  await expect(page.locator('#providerStatus')).toHaveText('Type a search for DuckDuckGo first.');
   await expect(page.locator('#providerStatus')).toHaveClass(/error/);
-  await shot(page, 'desktop-duck-copy-failed');
+  await shot(page, 'desktop-search-empty-message');
   await page.setViewportSize(viewports.phone);
   // The grid recomputes its columns on the resize event, so wait for that before measuring.
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
-  await shot(page, 'phone-duck-copy-failed');
+  await shot(page, 'phone-search-empty-message');
   await page.setViewportSize(viewports.desktop);
   // Provider grip: tooltip on hover, move options on Enter.
   const grip = page.locator('#googleForm .drag-handle');
@@ -219,7 +214,7 @@ test('visual review: tile hover, menu, selected group and locked layout states',
   await expect(page.locator('#groupBar .pill.active')).toHaveAttribute('aria-pressed', 'true');
   await page.evaluate(() => { setSettings({...getSettings(), lockLayout: 'yes', showExtraSearch: 'no'}); render(); });
   await expect(page.locator('#grid .card').first()).toHaveCSS('cursor', 'pointer');
-  await expect(page.locator('#duckForm, #pxForm, #chatgptForm, #claudeForm').locator('visible=true')).toHaveCount(0);
+  await expect(page.locator('#ddgForm, #pxForm').locator('visible=true')).toHaveCount(0);
   await expect(page.locator('#providerGrid .search:visible')).toHaveCount(2);
   await shot(page, 'desktop-group-selected-locked-one-search-row');
 });
