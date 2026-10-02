@@ -4,7 +4,7 @@ A customizable single-page browser dashboard with tiles, groups, search, wallpap
 
 ## Run it
 
-1. Download [`index.html`](https://github.com/RamrattanN/Web-Dashboard/blob/main/index.html) from the accepted baseline on `main`.  PR #3 is merged; the v1.5.1 GitHub tag and release are awaiting explicit publication confirmation.
+1. Download [`index.html`](https://github.com/RamrattanN/Web-Dashboard/blob/v1.5.1/index.html) from the versioned baseline, or download and extract the Source code ZIP from the [v1.5.1 release](https://github.com/RamrattanN/Web-Dashboard/releases/tag/v1.5.1).
 2. Open the file in a browser.  Configure tiles and layout using the Settings dialog.
 3. If you serve it from a web server, replace its `index.html` with this file and reload the page.
 
@@ -116,4 +116,4 @@ Functional acceptance was completed on 2026-10-01 for Chrome on macOS using the 
 
 See [DESIGN_BASELINE.md](DESIGN_BASELINE.md) for the Ramrattan Rentals visual specification.  See [BASELINE.md](BASELINE.md) for recovery provenance, the evidence sources and verification limits, and a repeatable Mac checklist with a 16-link fixture. See
 [CHANGELOG.md](CHANGELOG.md) for changes and [SECURITY.md](SECURITY.md) for
-private vulnerability reporting. The v1.5.1 baseline contains the accepted recovery, visual refresh, Picsum wallpaper and four-provider search section.  GitHub Release publication is pending.
+private vulnerability reporting. The v1.5.1 baseline contains the accepted recovery, visual refresh, Picsum wallpaper and four-provider search section.  [GitHub Release v1.5.1](https://github.com/RamrattanN/Web-Dashboard/releases/tag/v1.5.1) was published on 2026-10-02 at `901807f`.

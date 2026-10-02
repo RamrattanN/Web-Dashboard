@@ -1,6 +1,6 @@
 # Kanban
 
-Current baseline: v1.5.1.  Final four-provider dashboard accepted by the owner at `9d172f1` on 2026-10-01; PR #3 merged at `5ab4c00`; GitHub tag/release publication awaits explicit confirmation.  Historical accepted commits are recorded in BASELINE.md.
+Current baseline: v1.5.1.  Final four-provider dashboard accepted by the owner at `9d172f1` on 2026-10-01; PR #3 merged at `5ab4c00`; [GitHub Release v1.5.1](https://github.com/RamrattanN/Web-Dashboard/releases/tag/v1.5.1) published on 2026-10-02 at `901807f`.  Historical accepted commits are recorded in BASELINE.md.
 
 ## Delivered in v1.5.1
 

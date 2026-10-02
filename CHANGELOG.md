@@ -1,8 +1,8 @@
 # CHANGELOG
 
-## v1.5.1 - accepted baseline, release pending
+## v1.5.1 - 2026-10-02
 
-PR #3 is merged into main at `5ab4c00`.  GitHub tag/release publication remains pending explicit confirmation.
+PR #3 is merged into main at `5ab4c00`.  [v1.5.1](https://github.com/RamrattanN/Web-Dashboard/releases/tag/v1.5.1) is published at tag target `901807f`, following explicit owner confirmation on 2026-10-02.
 
 - Recovered optional Bing wallpaper from the unfinished feature branch into
   one loader using `startpage.settings.v1`; removed the need for injected
