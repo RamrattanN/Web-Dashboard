@@ -457,7 +457,7 @@ The standalone card is on `feature/continue-with-tabs`, version `v1.5.2-dev`, in
 
 ### Owner acceptance of the standalone card - 2026-10-02, at `9888d53`
 
-Nilesh Ramrattan tested the card by hand at `9888d53190b1fa06dc8c976685e5952788a8a44e` in normal Chrome on macOS, in the Dashboard Test profile, with the repository's `index.html` opened from `file://`.  The Chrome version was not recorded.  The four checks were set by the owner; the results below are the owner's reports and nothing more is claimed.  No agent-driven browser testing took place.
+Nilesh Ramrattan tested the card by hand at `9888d53190b1fa06dc8c976685e5952788a8a44e` in normal Chrome on macOS, in the Dashboard Test profile, with the repository's `index.html` opened from `file://`.  Chrome version: 154.0.8037.59 (Official Build) (x86_64), reported by the owner after the checks.  The four checks were set by the owner; the results below are the owner's reports and nothing more is claimed.  No agent-driven browser testing took place.
 
 | Check | Expectation set by the owner | Owner's reported result |
 | --- | --- | --- |
